@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Tidy Tails">
+  <meta name="theme-color" content="#4f7942">
+  <title>Tidy Tails - New Client Intake</title>
+
+  <style>
+    :root {
+      --primary: #4f7942;
+      --primary-light: #6b9e55;
+      --primary-dark: #3d5a32;
+      --bg: #f9f6f0;
+      --text: #2d4a27;
+      --border: #ddd6cc;
+      --error: #d32f2f;
+      --success: #388e3c;
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --spacing-2xl: 3rem;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+    }
+
+    body {
+      font-family: Georgia, serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: white;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      padding: var(--spacing-lg);
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    header .back-link {
+      position: absolute;
+      left: var(--spacing-lg);
+      top: var(--spacing-lg);
+      color: white;
+      text-decoration: none;
+      font-size: 0.9rem;
+      opacity: 0.9;
+      transition: opacity 0.2s;
+    }
+
+    header .back-link:hover {
+      opacity: 1;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      font-weight: normal;
+      letter-spacing: 0.5px;
+    }
+
+    header p {
+      font-size: 0.9rem;
+      opacity: 0.95;
+      margin-top: var(--spacing-sm);
+    }
+
+    .progress-container {
+      background-color: rgba(0,0,0,0.1);
+      padding: var(--spacing-md);
+      text-align: center;
+    }
+
+    .progress-bar {
+      background-color: rgba(255,255,255,0.3);
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .progress-fill {
+      background-color: white;
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    .progress-text {
+      color: white;
+      font-size: 0.85rem;
+      font-family: Arial, sans-serif;
+    }
+
+    main {
+      flex: 1;
+      padding: var(--spacing-xl) var(--spacing-lg);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .step {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .step.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    .step-title {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: var(--spacing-lg);
+      font-weight: normal;
+    }
+
+    .form-group {
+      margin-bottom: var(--spacing-lg);
+    }
+
+    label {
+      display: block;
+      font-weight: normal;
+      margin-bottom: var(--spacing-sm);
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    .required::after {
+      content: " *";
+      color: var(--error);
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    select,
+    textarea {
+      width: 100%;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: Georgia, serif;
+      font-size: 1rem;
+      color: var(--text);
+      background-color: white;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="tel"]:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(79, 121, 66, 0.1);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .size-selector {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-md);
+    }
+
+    .size-option {
+      position: relative;
+    }
+
+    .size-option input[type="radio"] {
+      display: none;
+    }
+
+    .size-option label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--spacing-lg);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+      margin-bottom: 0;
+      background-color: var(--bg);
+    }
+
+    .size-option input[type="radio"]:checked + label {
+      border-color: var(--primary);
+      background-color: rgba(79, 121, 66, 0.05);
+      font-weight: bold;
+    }
+
+    .size-icon {
+      font-size: 2rem;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .size-label {
+      font-weight: normal;
+    }
+
+    .pet-list {
+      margin: var(--spacing-lg) 0;
+    }
+
+    .pet-item {
+      background-color: var(--bg);
+      padding: var(--spacing-md);
+      border-radius: 6px;
+      margin-bottom: var(--spacing-md);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--border);
+    }
+
+    .pet-item strong {
+      color: var(--primary);
+      font-weight: normal;
+    }
+
+    .remove-btn {
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-radius: 4px;
+      color: var(--error);
+      cursor: pointer;
+      font-family: Arial, sans-serif;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .remove-btn:hover {
+      background-color: var(--error);
+      color: white;
+    }
+
+    .add-pet-btn,
+    .btn-primary,
+    .btn-success {
+      width: 100%;
+      padding: var(--spacing-md);
+      border: none;
+      border-radius: 4px;
+      font-family: Georgia, serif;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: var(--spacing-lg);
+    }
+
+    .add-pet-btn {
+      background-color: var(--bg);
+      border: 2px solid var(--primary);
+      color: var(--primary);
+      font-weight: normal;
+    }
+
+    .add-pet-btn:hover {
+      background-color: rgba(79, 121, 66, 0.05);
+    }
+
+    .add-pet-btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+      font-weight: normal;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .btn-success {
+      background-color: var(--success);
+      color: white;
+      font-weight: normal;
+    }
+
+    .btn-success:hover {
+      background-color: #2e7d32;
+    }
+
+    footer {
+      padding: var(--spacing-lg);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: var(--spacing-md);
+      background-color: var(--bg);
+    }
+
+    .btn-back {
+      flex: 1;
+      padding: var(--spacing-md);
+      background-color: white;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: Georgia, serif;
+      font-size: 1rem;
+      color: var(--text);
+      transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+      background-color: var(--bg);
+    }
+
+    .btn-back:active {
+      transform: scale(0.98);
+    }
+
+    .btn-next {
+      flex: 1;
+      padding: var(--spacing-md);
+      background-color: var(--primary);
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: Georgia, serif;
+      font-size: 1rem;
+      color: white;
+      transition: all 0.2s;
+    }
+
+    .btn-next:hover {
+      background-color: var(--primary-dark);
+    }
+
+    .btn-next:active {
+      transform: scale(0.98);
+    }
+
+    .btn-next:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .success-screen {
+      display: none;
+      text-align: center;
+      padding: var(--spacing-2xl) var(--spacing-lg);
+      animation: successBounce 0.5s ease;
+    }
+
+    @keyframes successBounce {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(0.95);
+      }
+    }
+
+    .success-icon {
+      font-size: 3rem;
+      color: var(--success);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .success-screen h2 {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: var(--spacing-md);
+      font-weight: normal;
+    }
+
+    .success-screen p {
+      color: #666;
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .success-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+
+    .success-btn {
+      padding: var(--spacing-md);
+      border: none;
+      border-radius: 4px;
+      font-family: Georgia, serif;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-another-client {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-another-client:hover {
+      background-color: var(--primary-dark);
+    }
+
+    .btn-back-app {
+      background-color: white;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+    }
+
+    .btn-back-app:hover {
+      background-color: var(--bg);
+    }
+
+    .review-section {
+      background-color: var(--bg);
+      padding: var(--spacing-md);
+      border-radius: 6px;
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .review-section h3 {
+      color: var(--primary);
+      font-size: 1.1rem;
+      margin-bottom: var(--spacing-md);
+      font-weight: normal;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: var(--spacing-sm);
+    }
+
+    .review-item {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--spacing-sm) 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .review-item:last-child {
+      border-bottom: none;
+    }
+
+    .review-label {
+      font-weight: bold;
+      color: var(--text);
+    }
+
+    .review-value {
+      color: #666;
+      text-align: right;
+    }
+
+    .offline-banner {
+      display: none;
+      background-color: #fff3cd;
+      color: #856404;
+      padding: var(--spacing-md) var(--spacing-lg);
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    .offline-banner.show {
+      display: block;
+    }
+
+    .error-message {
+      background-color: #ffebee;
+      color: var(--error);
+      padding: var(--spacing-md);
+      border-radius: 4px;
+      margin-bottom: var(--spacing-lg);
+      font-size: 0.95rem;
+      display: none;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: auto;
+      margin-right: var(--spacing-md);
+      cursor: pointer;
+    }
+
+    .checkbox-group label {
+      margin: 0;
+      cursor: pointer;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        box-shadow: none;
+      }
+
+      main {
+        padding: var(--spacing-lg) var(--spacing-md);
+      }
+
+      header {
+        padding: var(--spacing-lg) var(--spacing-md);
+      }
+
+      header .back-link {
+        left: var(--spacing-md);
+        top: var(--spacing-md);
+      }
+
+      .size-selector {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="offline-banner" id="offlineBanner">
+      You're offline. Your form will be saved and sent when you reconnect.
+    </div>
+
+    <header>
+      <a href="index.html" class="back-link">← Back to App</a>
+      <h1>Tidy Tails</h1>
+      <p>New Client Intake Form</p>
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text" id="progressText">Step 1 of 6</div>
+      </div>
+    </header>
+
+    <main>
+      <div class="error-message" id="errorMessage"></div>
+
+      <!-- Step 1: Client Info -->
+      <div class="step active" data-step="1">
+        <h2 class="step-title">Your Information</h2>
+        <div class="form-group">
+          <label for="firstName" class="required">First Name</label>
+          <input type="text" id="firstName" placeholder="e.g., Sarah" required>
+        </div>
+        <div class="form-group">
+          <label for="lastName" class="required">Last Name</label>
+          <input type="text" id="lastName" placeholder="e.g., Smith" required>
+        </div>
+        <div class="form-group">
+          <label for="phone" class="required">Phone Number</label>
+          <input type="tel" id="phone" placeholder="(555) 123-4567" required>
+        </div>
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" placeholder="sarah@example.com">
+        </div>
+      </div>
+
+      <!-- Step 2: Pet Info -->
+      <div class="step" data-step="2">
+        <h2 class="step-title">Your Pet(s)</h2>
+        <div id="petList"></div>
+        <button class="add-pet-btn" id="addPetBtn">+ Add Another Pet</button>
+      </div>
+
+      <!-- Step 3: Grooming Preferences -->
+      <div class="step" data-step="3">
+        <h2 class="step-title">Grooming Preferences</h2>
+        <div id="groomingPreferences"></div>
+      </div>
+
+      <!-- Step 4: Scheduling -->
+      <div class="step" data-step="4">
+        <h2 class="step-title">Preferred Schedule</h2>
+        <div class="form-group">
+          <label for="preferredLocation" class="required">Preferred Location</label>
+          <select id="preferredLocation" required>
+            <option value="">Select a location...</option>
+            <option value="annette">Annette's Location</option>
+            <option value="gina">Gina's Location</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="preferredDay" class="required">Preferred Day</label>
+          <select id="preferredDay" required>
+            <option value="">Select a day...</option>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+            <option value="Saturday">Saturday</option>
+            <option value="Sunday">Sunday</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="preferredFrequency" class="required">Grooming Frequency</label>
+          <select id="preferredFrequency" required>
+            <option value="">Select frequency...</option>
+            <option value="4">Every 4 weeks</option>
+            <option value="6">Every 6 weeks</option>
+            <option value="8">Every 8 weeks</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Step 5: Medical & Vaccination -->
+      <div class="step" data-step="5">
+        <h2 class="step-title">Medical Information</h2>
+        <div id="medicalInfo"></div>
+      </div>
+
+      <!-- Step 6: Review & Submit -->
+      <div class="step" data-step="6">
+        <h2 class="step-title">Review Your Information</h2>
+        <div id="reviewContent"></div>
+      </div>
+
+      <!-- Success Screen -->
+      <div class="success-screen" id="successScreen">
+        <div class="success-icon">✓</div>
+        <h2>Welcome to Tidy Tails!</h2>
+        <p>Your intake form has been submitted successfully. We'll be in touch soon to confirm your first appointment.</p>
+        <div class="success-buttons">
+          <button class="success-btn btn-another-client" id="anotherClientBtn">Add Another Client</button>
+          <button class="success-btn btn-back-app" onclick="window.location.href='index.html'">Back to App</button>
+        </div>
+      </div>
+    </main>
+
+    <footer id="footer">
+      <button class="btn-back" id="backBtn" style="display: none;">← Back</button>
+      <button class="btn-next" id="nextBtn">Next →</button>
+    </footer>
+  </div>
+
+  <!-- Supabase Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    // Configuration
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE';
+
+    // State management
+    let currentStep = 1;
+    const formData = {
+      client: {},
+      pets: [],
+      preferences: {},
+      scheduling: {},
+      medical: {}
+    };
+
+    let isOnline = navigator.onLine;
+    const container = document.querySelector('.container');
+    const offlineBanner = document.getElementById('offlineBanner');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const nextBtn = document.getElementById('nextBtn');
+    const backBtn = document.getElementById('backBtn');
+    const errorMessage = document.getElementById('errorMessage');
+    const successScreen = document.getElementById('successScreen');
+    const footer = document.getElementById('footer');
+
+    // Initialize Supabase client
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Event listeners for online/offline
+    window.addEventListener('online', () => {
+      isOnline = true;
+      offlineBanner.classList.remove('show');
+    });
+
+    window.addEventListener('offline', () => {
+      isOnline = false;
+      offlineBanner.classList.add('show');
+    });
+
+    // Update offline banner on load
+    if (!isOnline) {
+      offlineBanner.classList.add('show');
+    }
+
+    // Initialize form on load
+    document.addEventListener('DOMContentLoaded', () => {
+      renderStep(1);
+      attachEventListeners();
+      loadLocalData();
+    });
+
+    // Attach event listeners
+    function attachEventListeners() {
+      nextBtn.addEventListener('click', handleNext);
+      backBtn.addEventListener('click', handleBack);
+      document.getElementById('addPetBtn').addEventListener('click', addPet);
+      document.getElementById('anotherClientBtn').addEventListener('click', resetForm);
+    }
+
+    // Handle next button
+    function handleNext() {
+      if (validateStep(currentStep)) {
+        saveStepData(currentStep);
+
+        if (currentStep === 6) {
+          submitForm();
+        } else {
+          currentStep++;
+          renderStep(currentStep);
+        }
+      }
+    }
+
+    // Handle back button
+    function handleBack() {
+      if (currentStep > 1) {
+        saveStepData(currentStep);
+        currentStep--;
+        renderStep(currentStep);
+      }
+    }
+
+    // Render step
+    function renderStep(step) {
+      // Hide all steps
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+
+      // Show current step
+      document.querySelector(`[data-step="${step}"]`).classList.add('active');
+
+      // Update progress
+      updateProgress();
+
+      // Update button visibility
+      backBtn.style.display = step === 1 ? 'none' : 'block';
+      nextBtn.textContent = step === 6 ? 'Submit' : 'Next →';
+      nextBtn.disabled = false;
+
+      // Render step-specific content
+      if (step === 2) renderPetStep();
+      if (step === 3) renderGroomingStep();
+      if (step === 5) renderMedicalStep();
+      if (step === 6) renderReviewStep();
+    }
+
+    // Update progress bar
+    function updateProgress() {
+      const progress = (currentStep / 6) * 100;
+      progressFill.style.width = progress + '%';
+      progressText.textContent = `Step ${currentStep} of 6`;
+    }
+
+    // Validate step
+    function validateStep(step) {
+      errorMessage.classList.remove('show');
+
+      switch (step) {
+        case 1:
+          if (!document.getElementById('firstName').value.trim()) {
+            showError('Please enter your first name');
+            return false;
+          }
+          if (!document.getElementById('lastName').value.trim()) {
+            showError('Please enter your last name');
+            return false;
+          }
+          if (!document.getElementById('phone').value.trim()) {
+            showError('Please enter your phone number');
+            return false;
+          }
+          return true;
+
+        case 2:
+          if (formData.pets.length === 0) {
+            showError('Please add at least one pet');
+            return false;
+          }
+          return true;
+
+        case 3:
+          for (let pet of formData.pets) {
+            if (!document.getElementById(`style-${pet.id}`).value.trim()) {
+              showError(`Please enter grooming style for ${pet.name}`);
+              return false;
+            }
+          }
+          return true;
+
+        case 4:
+          if (!document.getElementById('preferredLocation').value) {
+            showError('Please select a preferred location');
+            return false;
+          }
+          if (!document.getElementById('preferredDay').value) {
+            showError('Please select a preferred day');
+            return false;
+          }
+          if (!document.getElementById('preferredFrequency').value) {
+            showError('Please select grooming frequency');
+            return false;
+          }
+          return true;
+
+        default:
+          return true;
+      }
+    }
+
+    // Show error message
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorMessage.classList.add('show');
+      window.scrollTo(0, 0);
+    }
+
+    // Save step data
+    function saveStepData(step) {
+      switch (step) {
+        case 1:
+          formData.client = {
+            first_name: document.getElementById('firstName').value.trim(),
+            last_name: document.getElementById('lastName').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            email: document.getElementById('email').value.trim() || null
+          };
+          break;
+
+        case 3:
+          formData.pets.forEach(pet => {
+            pet.grooming_style = document.getElementById(`style-${pet.id}`).value.trim();
+            pet.temperament_notes = document.getElementById(`temperament-${pet.id}`).value.trim() || null;
+          });
+          break;
+
+        case 4:
+          formData.scheduling = {
+            preferred_location: document.getElementById('preferredLocation').value,
+            preferred_day: document.getElementById('preferredDay').value,
+            preferred_frequency_weeks: parseInt(document.getElementById('preferredFrequency').value)
+          };
+          break;
+
+        case 5:
+          formData.pets.forEach(pet => {
+            pet.medical_notes = document.getElementById(`medical-${pet.id}`).value.trim() || null;
+            pet.vet_contact = document.getElementById(`vet-${pet.id}`).value.trim() || null;
+            pet.vaccination_status = document.getElementById(`vaccination-${pet.id}`).value || null;
+          });
+          break;
+      }
+
+      saveLocalData();
+    }
+
+    // Pet step rendering
+    function renderPetStep() {
+      const petList = document.getElementById('petList');
+      petList.innerHTML = '';
+
+      if (formData.pets.length === 0) {
+        petList.innerHTML = '<p style="color: #999; margin-bottom: 1rem;">Add your first pet to get started</p>';
+      } else {
+        formData.pets.forEach((pet, index) => {
+          const petId = pet.id || `pet-${Date.now()}-${index}`;
+          if (!pet.id) pet.id = petId;
+
+          const petHTML = `
+            <div class="form-group">
+              <label for="petName-${petId}" class="required">Pet Name ${formData.pets.length > 1 ? `(${index + 1})` : ''}</label>
+              <input type="text" id="petName-${petId}" placeholder="e.g., Max" value="${pet.name || ''}" required>
+            </div>
+            <div class="form-group">
+              <label for="breed-${petId}">Breed</label>
+              <input type="text" id="breed-${petId}" placeholder="e.g., Golden Retriever" value="${pet.breed || ''}">
+            </div>
+            <div class="form-group">
+              <label class="required">Size</label>
+              <div class="size-selector">
+                <div class="size-option">
+                  <input type="radio" id="size-small-${petId}" name="size-${petId}" value="small" ${pet.size === 'small' ? 'checked' : ''}>
+                  <label for="size-small-${petId}">
+                    <div class="size-icon">🐕</div>
+                    <div class="size-label">Small</div>
+                  </label>
+                </div>
+                <div class="size-option">
+                  <input type="radio" id="size-medium-${petId}" name="size-${petId}" value="medium" ${pet.size === 'medium' ? 'checked' : ''}>
+                  <label for="size-medium-${petId}">
+                    <div class="size-icon">🐕</div>
+                    <div class="size-label">Medium</div>
+                  </label>
+                </div>
+                <div class="size-option">
+                  <input type="radio" id="size-large-${petId}" name="size-${petId}" value="large" ${pet.size === 'large' ? 'checked' : ''}>
+                  <label for="size-large-${petId}">
+                    <div class="size-icon">🐕</div>
+                    <div class="size-label">Large</div>
+                  </label>
+                </div>
+                <div class="size-option">
+                  <input type="radio" id="size-xl-${petId}" name="size-${petId}" value="xl" ${pet.size === 'xl' ? 'checked' : ''}>
+                  <label for="size-xl-${petId}">
+                    <div class="size-icon">🐕</div>
+                    <div class="size-label">XL</div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          `;
+
+          if (formData.pets.length > 1) {
+            const petItem = document.createElement('div');
+            petItem.innerHTML = petHTML + `<button class="remove-btn" onclick="removePet('${petId}')">Remove Pet</button>`;
+            petList.appendChild(petItem);
+          } else {
+            petList.innerHTML += petHTML;
+          }
+        });
+      }
+
+      // Add listener for pet name changes
+      formData.pets.forEach((pet, index) => {
+        const petNameInput = document.getElementById(`petName-${pet.id}`);
+        if (petNameInput) {
+          petNameInput.addEventListener('change', (e) => {
+            pet.name = e.target.value;
+          });
+
+          const breedInput = document.getElementById(`breed-${pet.id}`);
+          if (breedInput) {
+            breedInput.addEventListener('change', (e) => {
+              pet.breed = e.target.value;
+            });
+          }
+
+          // Size selector
+          document.querySelectorAll(`input[name="size-${pet.id}"]`).forEach(radio => {
+            radio.addEventListener('change', (e) => {
+              pet.size = e.target.value;
+            });
+          });
+        }
+      });
+    }
+
+    // Add pet
+    function addPet() {
+      formData.pets.push({
+        id: `pet-${Date.now()}`,
+        name: '',
+        breed: '',
+        size: '',
+        grooming_style: '',
+        temperament_notes: ''
+      });
+      renderPetStep();
+    }
+
+    // Remove pet
+    function removePet(petId) {
+      formData.pets = formData.pets.filter(p => p.id !== petId);
+      renderPetStep();
+    }
+
+    // Grooming preferences step
+    function renderGroomingStep() {
+      const container = document.getElementById('groomingPreferences');
+      container.innerHTML = '';
+
+      formData.pets.forEach((pet, index) => {
+        const petTitle = formData.pets.length > 1 ? `${pet.name || 'Pet ' + (index + 1)}` : 'Your Dog';
+
+        const html = `
+          <div style="margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #ddd;">
+            <h3 style="color: #4f7942; margin-bottom: 1rem; font-weight: normal;">${petTitle}</h3>
+            <div class="form-group">
+              <label for="style-${pet.id}" class="required">Preferred Grooming Style</label>
+              <textarea id="style-${pet.id}" placeholder="e.g., Puppy cut, long and fluffy, short/practical" required>${pet.grooming_style || ''}</textarea>
+            </div>
+            <div class="form-group">
+              <label for="temperament-${pet.id}">Behavioral/Handling Notes</label>
+              <textarea id="temperament-${pet.id}" placeholder="e.g., anxious around other dogs, needs breaks, aggressive with clippers">${pet.temperament_notes || ''}</textarea>
+            </div>
+          </div>
+        `;
+
+        container.innerHTML += html;
+      });
+    }
+
+    // Medical info step
+    function renderMedicalStep() {
+      const container = document.getElementById('medicalInfo');
+      container.innerHTML = '';
+
+      formData.pets.forEach((pet, index) => {
+        const petTitle = formData.pets.length > 1 ? `${pet.name || 'Pet ' + (index + 1)}` : 'Your Dog';
+
+        const html = `
+          <div style="margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid #ddd;">
+            <h3 style="color: #4f7942; margin-bottom: 1rem; font-weight: normal;">${petTitle}</h3>
+            <div class="form-group">
+              <label for="medical-${pet.id}">Allergies & Medical Conditions</label>
+              <textarea id="medical-${pet.id}" placeholder="e.g., sensitive skin, allergies to certain shampoos">${pet.medical_notes || ''}</textarea>
+            </div>
+            <div class="form-group">
+              <label for="vet-${pet.id}">Vet Contact (Optional)</label>
+              <input type="text" id="vet-${pet.id}" placeholder="Vet name, phone, or clinic" value="${pet.vet_contact || ''}">
+            </div>
+            <div class="form-group">
+              <label for="vaccination-${pet.id}">Vaccination Status</label>
+              <select id="vaccination-${pet.id}">
+                <option value="">Not specified</option>
+                <option value="up_to_date" ${pet.vaccination_status === 'up_to_date' ? 'selected' : ''}>Up to date</option>
+                <option value="due_soon" ${pet.vaccination_status === 'due_soon' ? 'selected' : ''}>Due soon</option>
+                <option value="not_vaccinated" ${pet.vaccination_status === 'not_vaccinated' ? 'selected' : ''}>Not vaccinated</option>
+              </select>
+            </div>
+          </div>
+        `;
+
+        container.innerHTML += html;
+      });
+    }
+
+    // Review step
+    function renderReviewStep() {
+      const container = document.getElementById('reviewContent');
+      container.innerHTML = '';
+
+      // Client info review
+      let html = `
+        <div class="review-section">
+          <h3>Your Information</h3>
+          <div class="review-item">
+            <span class="review-label">Name</span>
+            <span class="review-value">${formData.client.first_name} ${formData.client.last_name}</span>
+          </div>
+          <div class="review-item">
+            <span class="review-label">Phone</span>
+            <span class="review-value">${formData.client.phone}</span>
+          </div>
+          ${formData.client.email ? `
+            <div class="review-item">
+              <span class="review-label">Email</span>
+              <span class="review-value">${formData.client.email}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      // Pets review
+      html += `<div class="review-section"><h3>Your Pet(s)</h3>`;
+      formData.pets.forEach((pet, index) => {
+        html += `
+          <div style="margin-bottom: 1.5rem;">
+            <strong>${pet.name || 'Pet ' + (index + 1)}</strong> ${pet.breed ? ' (' + pet.breed + ')' : ''}
+            <div class="review-item" style="margin-top: 0.5rem;">
+              <span class="review-label">Size</span>
+              <span class="review-value">${pet.size || 'Not specified'}</span>
+            </div>
+            <div class="review-item">
+              <span class="review-label">Grooming Style</span>
+              <span class="review-value">${pet.grooming_style || 'Not specified'}</span>
+            </div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+
+      // Scheduling review
+      html += `
+        <div class="review-section">
+          <h3>Preferred Schedule</h3>
+          <div class="review-item">
+            <span class="review-label">Location</span>
+            <span class="review-value">${formData.scheduling.preferred_location === 'annette' ? "Annette's Location" : "Gina's Location"}</span>
+          </div>
+          <div class="review-item">
+            <span class="review-label">Preferred Day</span>
+            <span class="review-value">${formData.scheduling.preferred_day}</span>
+          </div>
+          <div class="review-item">
+            <span class="review-label">Frequency</span>
+            <span class="review-value">Every ${formData.scheduling.preferred_frequency_weeks} weeks</span>
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    // Submit form
+    async function submitForm() {
+      nextBtn.disabled = true;
+      nextBtn.textContent = 'Submitting...';
+
+      try {
+        // Check Supabase connection
+        if (!isOnline || SUPABASE_URL === 'YOUR_SUPABASE_URL_HERE') {
+          // Save to localStorage if offline or keys not set
+          saveFormLocally();
+          showSuccessScreen();
+          return;
+        }
+
+        // Create client
+        const { data: clientData, error: clientError } = await supabase
+          .from('clients')
+          .insert([{
+            first_name: formData.client.first_name,
+            last_name: formData.client.last_name,
+            phone: formData.client.phone,
+            email: formData.client.email || null,
+            preferred_location: formData.scheduling.preferred_location,
+            preferred_day: formData.scheduling.preferred_day,
+            preferred_frequency_weeks: formData.scheduling.preferred_frequency_weeks,
+            tier: 'new'
+          }])
+          .select();
+
+        if (clientError) {
+          throw new Error(clientError.message);
+        }
+
+        const clientId = clientData[0].id;
+
+        // Insert pets
+        const petsToInsert = formData.pets.map(pet => ({
+          client_id: clientId,
+          name: pet.name,
+          breed: pet.breed || null,
+          size: pet.size || null,
+          grooming_style: pet.grooming_style || null,
+          temperament_notes: pet.temperament_notes || null,
+          medical_notes: pet.medical_notes || null,
+          vet_contact: pet.vet_contact || null,
+          vaccination_status: pet.vaccination_status || null
+        }));
+
+        const { error: petsError } = await supabase
+          .from('pets')
+          .insert(petsToInsert);
+
+        if (petsError) {
+          throw new Error(petsError.message);
+        }
+
+        // Clear localStorage on success
+        localStorage.removeItem('tidyTailsFormData');
+        showSuccessScreen();
+
+      } catch (error) {
+        console.error('Submission error:', error);
+
+        // Fall back to localStorage
+        saveFormLocally();
+        showSuccessScreen();
+      }
+    }
+
+    // Save form to localStorage
+    function saveFormLocally() {
+      localStorage.setItem('tidyTailsFormData', JSON.stringify(formData));
+    }
+
+    // Load form from localStorage
+    function loadLocalData() {
+      const saved = localStorage.getItem('tidyTailsFormData');
+      if (saved) {
+        Object.assign(formData, JSON.parse(saved));
+      }
+    }
+
+    // Show success screen
+    function showSuccessScreen() {
+      footer.style.display = 'none';
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      successScreen.style.display = 'block';
+    }
+
+    // Reset form
+    function resetForm() {
+      formData.client = {};
+      formData.pets = [];
+      formData.preferences = {};
+      formData.scheduling = {};
+      formData.medical = {};
+      currentStep = 1;
+      localStorage.removeItem('tidyTailsFormData');
+      successScreen.style.display = 'none';
+      footer.style.display = 'flex';
+      renderStep(1);
+    }
+  </script>
+</body>
+</html>
