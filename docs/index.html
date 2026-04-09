@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tidy Tails">
+<title>Tidy Tails</title>
+<style>
+:root {
+  --g: #4f7942; --g2: #7ab369; --g3: #b8d9a8; --g4: #eaf5e4; --g5: #f2faf0;
+  --bg: #f5f2ec; --card: #fff; --text: #2d4a27; --text2: #555; --text3: #999;
+  --red: #c53030; --orange: #ba7517; --blue: #185FA5;
+  --radius: 14px; --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --safe-top: env(safe-area-inset-top, 20px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text2); min-height: 100vh; overflow-x: hidden; }
+.app { max-width: 430px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+/* Header */
+.header { background: var(--g); color: #fff; padding: calc(var(--safe-top) + 12px) 20px 14px; position: sticky; top: 0; z-index: 100; }
+.header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+.header .sub { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+/* Search */
+.search-wrap { padding: 12px 16px 8px; position: sticky; top: 0; z-index: 90; background: var(--bg); }
+.search-box { display: flex; align-items: center; background: var(--card); border-radius: 12px; padding: 0 14px; box-shadow: var(--shadow); border: 2px solid transparent; transition: border-color 0.2s; }
+.search-box.focused { border-color: var(--g2); }
+.search-box svg { width: 18px; height: 18px; stroke: var(--text3); flex-shrink: 0; }
+.search-box input { flex: 1; border: none; outline: none; padding: 13px 10px; font-size: 15px; background: transparent; font-family: inherit; }
+.search-box input::placeholder { color: #bbb; }
+.search-box .clear-btn { background: #ddd; border: none; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; color: #888; }
+/* Tabs */
+.tabs { display: flex; gap: 0; padding: 0 16px; margin-bottom: 4px; }
+.tab { flex: 1; text-align: center; padding: 10px 4px; font-size: 11px; font-weight: 600; color: var(--text3); border-bottom: 2.5px solid transparent; cursor: pointer; transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
+.tab.active { color: var(--g); border-bottom-color: var(--g); }
+/* Cards */
+.card { background: var(--card); border-radius: var(--radius); margin: 6px 16px; padding: 14px 16px; box-shadow: var(--shadow); }
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.client-name { font-size: 16px; font-weight: 700; color: var(--text); }
+.client-phone { font-size: 13px; color: var(--g); font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.client-phone a { color: var(--g); text-decoration: none; }
+.badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 700; display: inline-block; }
+.badge-vip { background: var(--g4); color: #2d7a1f; }
+.badge-new { background: #e6f1fb; color: var(--blue); }
+.badge-watch { background: #fdeaea; color: var(--red); }
+.badge-loyal { background: var(--g5); color: var(--g); }
+/* Pet rows */
+.pet-row { display: flex; align-items: center; padding: 8px 0; border-top: 1px solid #f0ece6; gap: 10px; }
+.pet-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.pet-icon.small { background: #f0e6f8; }
+.pet-icon.medium { background: #e6f1fb; }
+.pet-icon.large { background: #faeeda; }
+.pet-icon.xl { background: #fdeaea; }
+.pet-info { flex: 1; min-width: 0; }
+.pet-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.pet-breed { font-size: 11px; color: var(--text3); }
+.pet-price { text-align: right; }
+.pet-fee { font-size: 16px; font-weight: 700; color: var(--g); }
+.pet-size { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+/* Stats row */
+.stats-row { display: flex; gap: 8px; margin-top: 8px; }
+.stat { flex: 1; background: var(--g5); border-radius: 8px; padding: 8px; text-align: center; }
+.stat-val { font-size: 15px; font-weight: 700; color: var(--text); }
+.stat-label { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+/* Client detail */
+.detail-back { padding: 12px 16px; font-size: 14px; color: var(--g); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+.detail-header { padding: 0 16px 12px; }
+.detail-name { font-size: 22px; font-weight: 700; color: var(--text); }
+.detail-meta { font-size: 12px; color: var(--text3); margin-top: 4px; }
+.detail-actions { display: flex; gap: 8px; margin-top: 12px; }
+.action-btn { flex: 1; padding: 10px; border-radius: 10px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.action-call { background: var(--g); color: #fff; }
+.action-book { background: var(--g4); color: var(--g); }
+.action-note { background: #f0f0f0; color: var(--text2); }
+/* Schedule */
+.schedule-header { padding: 12px 16px 6px; }
+.schedule-title { font-size: 16px; font-weight: 700; color: var(--text); }
+.schedule-date { font-size: 13px; color: var(--text3); }
+.day-nav { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; }
+.day-nav button { background: var(--g4); border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; color: var(--g); cursor: pointer; }
+.day-nav .current-day { font-size: 15px; font-weight: 700; color: var(--text); }
+.time-slot { margin: 4px 16px; background: var(--card); border-radius: 12px; padding: 12px 14px; box-shadow: var(--shadow); display: flex; gap: 12px; align-items: flex-start; }
+.time-label { font-size: 11px; font-weight: 700; color: var(--g); min-width: 50px; padding-top: 2px; }
+.slot-content { flex: 1; }
+.slot-dog { font-size: 14px; font-weight: 700; color: var(--text); }
+.slot-detail { font-size: 11px; color: var(--text3); }
+.slot-stage { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 700; margin-top: 4px; }
+.stage-checkin { background: #e6f1fb; color: var(--blue); }
+.stage-bath { background: #ddf4ff; color: #0969da; }
+.stage-dry { background: #faeeda; color: var(--orange); }
+.stage-groom { background: var(--g4); color: var(--g); }
+.stage-pickup { background: #f0e6f8; color: #7c3aed; }
+.slot-empty { font-size: 13px; color: #ccc; font-style: italic; padding: 20px 0; text-align: center; }
+.slot-alert { background: #fff5f5; border-left: 3px solid var(--red); }
+.alert-text { font-size: 11px; color: var(--red); font-weight: 600; margin-top: 4px; }
+/* Location toggle */
+.loc-toggle { display: flex; background: #e8e4de; border-radius: 10px; padding: 3px; margin: 8px 16px; }
+.loc-btn { flex: 1; padding: 8px; text-align: center; font-size: 12px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s; }
+.loc-btn.active { background: var(--card); color: var(--g); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+.loc-btn:not(.active) { background: transparent; color: var(--text3); }
+/* Capacity bar */
+.capacity { margin: 8px 16px; }
+.capacity-bar { height: 8px; background: #e8e4de; border-radius: 4px; overflow: hidden; }
+.capacity-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+.capacity-text { font-size: 11px; color: var(--text3); margin-top: 4px; display: flex; justify-content: space-between; }
+/* Automations */
+.auto-card { background: var(--card); border-radius: var(--radius); margin: 6px 16px; padding: 14px 16px; box-shadow: var(--shadow); }
+.auto-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.auto-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.auto-toggle { width: 44px; height: 26px; border-radius: 13px; border: none; cursor: pointer; position: relative; transition: background 0.2s; }
+.auto-toggle.on { background: var(--g); }
+.auto-toggle.off { background: #ccc; }
+.auto-toggle::after { content: ''; position: absolute; width: 22px; height: 22px; background: #fff; border-radius: 50%; top: 2px; transition: left 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.auto-toggle.on::after { left: 20px; }
+.auto-toggle.off::after { left: 2px; }
+.auto-desc { font-size: 12px; color: var(--text3); line-height: 1.5; }
+.auto-stat { font-size: 12px; color: var(--g); font-weight: 600; margin-top: 6px; }
+/* Quick-book modal */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 200; display: flex; align-items: flex-end; justify-content: center; }
+.modal { background: var(--card); border-radius: 20px 20px 0 0; width: 100%; max-width: 430px; padding: 20px 20px calc(20px + var(--safe-bottom)); max-height: 85vh; overflow-y: auto; }
+.modal h3 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 16px; }
+.modal label { font-size: 12px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; margin-top: 14px; }
+.modal select, .modal input[type="date"], .modal input[type="time"], .modal textarea {
+  width: 100%; padding: 12px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 14px; font-family: inherit; background: #fafafa; appearance: none; -webkit-appearance: none;
+}
+.modal select { background: #fafafa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center; padding-right: 30px; }
+.modal .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+.modal .btn-primary { flex: 1; padding: 14px; border-radius: 12px; border: none; background: var(--g); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
+.modal .btn-secondary { padding: 14px 20px; border-radius: 12px; border: 1.5px solid #ddd; background: var(--card); color: var(--text2); font-size: 15px; font-weight: 600; cursor: pointer; }
+.conflict-warning { background: #fff5f5; border: 1.5px solid #fecaca; border-radius: 10px; padding: 10px 12px; margin-top: 12px; font-size: 12px; color: var(--red); line-height: 1.5; }
+.availability-ok { background: var(--g5); border: 1.5px solid var(--g3); border-radius: 10px; padding: 10px 12px; margin-top: 12px; font-size: 12px; color: var(--g); line-height: 1.5; font-weight: 600; }
+/* Bottom nav */
+.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: var(--card); border-top: 1px solid #e8e4de; display: flex; padding: 6px 0 calc(6px + var(--safe-bottom)); z-index: 100; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 6px 0; cursor: pointer; border: none; background: none; }
+.nav-item svg { width: 22px; height: 22px; }
+.nav-item span { font-size: 10px; margin-top: 3px; font-weight: 600; }
+.nav-item.active svg { stroke: var(--g); }
+.nav-item.active span { color: var(--g); }
+.nav-item:not(.active) svg { stroke: #bbb; }
+.nav-item:not(.active) span { color: #bbb; }
+/* Content area */
+.content { flex: 1; padding-bottom: 80px; }
+/* Empty states */
+.empty { text-align: center; padding: 40px 20px; }
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-text { font-size: 14px; color: var(--text3); line-height: 1.6; }
+/* New client form */
+.form-row { margin: 10px 16px; }
+.form-row label { font-size: 12px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+.form-row input, .form-row select, .form-row textarea { width: 100%; padding: 12px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 14px; font-family: inherit; background: var(--card); }
+.form-row textarea { min-height: 80px; resize: vertical; }
+.save-btn { margin: 16px; padding: 14px; width: calc(100% - 32px); border-radius: 12px; border: none; background: var(--g); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
+/* Notes */
+.note-item { padding: 8px 0; border-bottom: 1px solid #f0ece6; }
+.note-date { font-size: 10px; color: var(--text3); }
+.note-text { font-size: 13px; color: var(--text2); margin-top: 2px; }
+/* Responsive tweaks */
+@media (max-width: 380px) { .stats-row { flex-wrap: wrap; } .stat { min-width: calc(50% - 4px); } }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+// ===== CLIENT DATABASE (parsed from your CSV files) =====
+const RAW=[{"id":15,"n":"Joanna Pesard (Lisa Madden)","an":["Joanna Pesard"],"ph":["705-323-3351"],"p":[{"n":"Milo","b":"Cavachon","s":"Small","af":54.43,"lf":55.0,"vc":35},{"n":"Chloe","b":"Cavachon","s":"Small","af":54.41,"lf":55.0,"vc":34}],"tv":69,"at":12.23,"ya":["2023","2024","2025"],"lv":"22-Dec-25","fy":"2023"},{"id":1,"n":"Sabrina Daly","an":[],"ph":["705-327-4269"],"p":[{"n":"Lily","b":"Golden","s":"Large","af":69.68,"lf":70.0,"vc":31}],"tv":31,"at":30.16,"ya":["2023","2024","2025"],"lv":"8-Dec-25","fy":"2023"},{"id":4,"n":"Kathleen Shaughnessy","an":[],"ph":["705-309-5846"],"p":[{"n":"Dumpling","b":"Chow Chow","s":"Large","af":72.92,"lf":80.0,"vc":24}],"tv":24,"at":7.5,"ya":["2023","2024","2025"],"lv":"15-Dec-25","fy":"2023"},{"id":44,"n":"Pamela Elford","an":[],"ph":["705-321-5298"],"p":[{"n":"Phil","b":"Cavachon","s":"Small","af":55.0,"lf":55.0,"vc":12},{"n":"Floyd","b":"Cavachon","s":"Small","af":55.0,"lf":55.0,"vc":11},{"n":"Baxter","b":"Cavachon","s":"Small","af":55.0,"lf":55.0,"vc":1}],"tv":24,"at":9.38,"ya":["2023","2024","2025"],"lv":"24-Nov-25","fy":"2023"},{"id":51,"n":"Lesley Santos","an":[],"ph":["647-998-1200"],"p":[{"n":"Harlow","b":"Med Golden Doodle","s":"Large","af":67.92,"lf":80.0,"vc":12},{"n":"Miles","b":"Shipoo","s":"Small","af":59.17,"lf":55.0,"vc":12}],"tv":24,"at":5.0,"ya":["2023","2024","2025"],"lv":"18-Dec-25","fy":"2023"},{"id":25,"n":"David & Joanne Rose","an":[],"ph":["705-326-9603"],"p":[{"n":"Rocky","b":"Labradoodle","s":"Large","af":79.77,"lf":80.0,"vc":22}],"tv":22,"at":15.0,"ya":["2023","2024","2025"],"lv":"15-Dec-25","fy":"2023"},{"id":9,"n":"Dyte (Julie Handy)","an":[],"ph":["705-345-5767"],"p":[{"n":"Jessie","b":"Aussie","s":"Large","af":71.84,"lf":75.0,"vc":19},{"n":"Douglas","b":"Cat","s":"Medium","af":60.0,"lf":80.0,"vc":2}],"tv":21,"at":18.16,"ya":["2023","2024","2025"],"lv":"2-Oct-25","fy":"2023"},{"id":29,"n":"Mathew Stefan","an":[],"ph":["519-872-2903"],"p":[{"n":"Maple","b":"Golden","s":"Large","af":69.0,"lf":85.0,"vc":15},{"n":"Braxton","b":"","s":"Medium","af":15.0,"lf":15.0,"vc":1},{"n":"Braxlon","b":"","s":"Medium","af":12.5,"lf":15.0,"vc":2}],"tv":18,"at":16.71,"ya":["2023","2024","2025"],"lv":"26-Nov-25","fy":"2023"},{"id":54,"n":"Leigh E Majury","an":[],"ph":["705-304-1965"],"p":[{"n":"Libby","b":"Minature Schnauzer","s":"Small","af":56.94,"lf":55.0,"vc":18}],"tv":18,"at":10.0,"ya":["2023","2024","2025"],"lv":"27-Nov-25","fy":"2023"},{"id":101,"n":"Wallis (Enzo Borrelli)","an":["Wallis (enzo Borrelli)"],"ph":["705-229-6170"],"p":[{"n":"Molly","b":"Shipoo","s":"Small","af":55.0,"lf":55.0,"vc":9},{"n":"Zoey","b":"Shipoo","s":"Small","af":55.0,"lf":55.0,"vc":9}],"tv":18,"at":9.44,"ya":["2024","2025"],"lv":"22-Dec-25","fy":"2024"},{"id":36,"n":"Stacey Cameron","an":[],"ph":["705-331-3092"],"p":[{"n":"Stella","b":"Doodle","s":"Medium","af":60.0,"lf":60.0,"vc":15}],"tv":15,"at":9.6,"ya":["2023","2024","2025"],"lv":"8-Dec-25","fy":"2023"},{"id":28,"n":"Andrews (Stacey Waslyk)","an":["Andrews"],"ph":["289-688-0656"],"p":[{"n":"Bobbi","b":"Leonberger","s":"XL","af":110.77,"lf":120.0,"vc":13},{"n":"Wilson","b":"Bullmastiff","s":"XL","af":70.0,"lf":70.0,"vc":1}],"tv":14,"at":17.86,"ya":["2023","2024","2025"],"lv":"17-Nov-25","fy":"2023"},{"id":14,"n":"Cory Handy","an":["Kori Handy"],"ph":["705-955-4414"],"p":[{"n":"Ricky","b":"Lab","s":"Medium","af":56.67,"lf":30.0,"vc":6},{"n":"Morty","b":"Aussie X","s":"Large","af":70.0,"lf":75.0,"vc":7}],"tv":13,"at":13.75,"ya":["2023","2024","2025"],"lv":"27-Nov-25","fy":"2023"},{"id":16,"n":"Joanna Pesaro","an":[],"ph":["416-520-5297"],"p":[{"n":"Beau","b":"Portuguese Water Dog","s":"Large","af":99.23,"lf":100.0,"vc":13}],"tv":13,"at":18.08,"ya":["2023","2024","2025"],"lv":"27-Nov-25","fy":"2023"},{"id":50,"n":"Peggy Lund","an":["Lund"],"ph":["705-326-7267"],"p":[{"n":"Jake","b":"Golden Retriever","s":"Large","af":70.42,"lf":55.0,"vc":12}],"tv":12,"at":9.0,"ya":["2023","2024","2025"],"lv":"6-Nov-25","fy":"2023"},{"id":7,"n":"Crystal Ann Santocono","an":[],"ph":["705-955-3723"],"p":[{"n":"Oddy","b":"Medium Doodle","s":"Medium","af":58.89,"lf":80.0,"vc":9},{"n":"Daisy","b":"Medium Doodle","s":"Medium","af":80.0,"lf":80.0,"vc":2}],"tv":11,"at":8.5,"ya":["2023","2024","2025"],"lv":"6-Oct-25","fy":"2023"},{"id":38,"n":"Jennifer Marie Marshall","an":[],"ph":["705-321-5023"],"p":[{"n":"Georgia","b":"Vizsla","s":"Large","af":63.18,"lf":65.0,"vc":11}],"tv":11,"at":8.0,"ya":["2023","2024","2025"],"lv":"12-Dec-25","fy":"2023"},{"id":76,"n":"Rockley","an":[],"ph":["705-325-2907"],"p":[{"n":"Tiko","b":"small poodle","s":"Medium","af":55.0,"lf":55.0,"vc":11}],"tv":11,"at":6.82,"ya":["2024","2025"],"lv":"8-Dec-25","fy":"2024"},{"id":5,"n":"Cooper","an":[],"ph":["705-727-6557"],"p":[{"n":"Theo","b":"Lab X Poodle","s":"Large","af":90.0,"lf":55.0,"vc":5},{"n":"Lexie","b":"Std Poodle","s":"Medium","af":85.0,"lf":50.0,"vc":5}],"tv":10,"at":8.12,"ya":["2023","2024","2025"],"lv":"9-Jan-25","fy":"2023"},{"id":6,"n":"Viridiana Guadalupe Ramos Perez","an":[],"ph":["705-279-5639"],"p":[{"n":"Penny","b":"","s":"Medium","af":86.0,"lf":95.0,"vc":10}],"tv":10,"at":11.0,"ya":["2023","2024","2025"],"lv":"18-Sep-25","fy":"2023"},{"id":106,"n":"Melissa Wicks","an":["Wicks"],"ph":["705-718-0415"],"p":[{"n":"Jackson","b":"Sheppard","s":"Large","af":70.0,"lf":70.0,"vc":10}],"tv":10,"at":14.5,"ya":["2024","2025"],"lv":"22-Dec-25","fy":"2024"},{"id":13,"n":"Korrie L Silver","an":["Korrie Silver"],"ph":["647-300-7952"],"p":[{"n":"Gavi","b":"Medium Mix","s":"Medium","af":55.62,"lf":65.0,"vc":8},{"n":"Gavi's sister","b":"","s":"Medium","af":20.0,"lf":20.0,"vc":1}],"tv":9,"at":9.71,"ya":["2023","2024","2025"],"lv":"6-Oct-25","fy":"2023"},{"id":18,"n":"Rhondaley Glass","an":[],"ph":["705-795-6785"],"p":[{"n":"Piper","b":"thick Golden","s":"Large","af":82.22,"lf":85.0,"vc":9}],"tv":9,"at":10.25,"ya":["2023","2024","2025"],"lv":"26-Aug-25","fy":"2023"},{"id":30,"n":"Rich VanHemert","an":[],"ph":["289-264-6081"],"p":[{"n":"Gracie","b":"","s":"Medium","af":81.25,"lf":85.0,"vc":8}],"tv":9,"at":11.25,"ya":["2023","2024","2025"],"lv":"9-Oct-25","fy":"2023"},{"id":43,"n":"Marco","an":[],"ph":["705-329-4154"],"p":[{"n":"Grizzly","b":"Lab X Poodle","s":"Large","af":96.67,"lf":100.0,"vc":6},{"n":"Bently (Grizzly's mom)","b":"Yorkie","s":"Small","af":50.0,"lf":50.0,"vc":2},{"n":"Grizlik","b":"Lab X Poodle","s":"Large","af":100.0,"lf":100.0,"vc":1}],"tv":9,"at":11.0,"ya":["2023","2024","2025"],"lv":"12-May-25","fy":"2023"},{"id":90,"n":"Jennifer L Kitchen","an":[],"ph":["705-330-9119"],"p":[{"n":"Rufus","b":"small mix","s":"Small","af":55.83,"lf":60.0,"vc":6},{"n":"Sunday","b":"small mix","s":"Small","af":60.0,"lf":60.0,"vc":2},{"n":"Ebony","b":"small mix","s":"Small","af":60.0,"lf":60.0,"vc":1}],"tv":9,"at":15.0,"ya":["2024","2025"],"lv":"4-Dec-25","fy":"2024"},{"id":40,"n":"Cathleen McRob","an":[],"ph":["705-329-8587"],"p":[{"n":"Rhea","b":"Aussie Doodle","s":"Large","af":74.38,"lf":95.0,"vc":8}],"tv":8,"at":20.0,"ya":["2023","2024","2025"],"lv":"16-Oct-25","fy":"2023"},{"id":45,"n":"McHugh","an":[],"ph":["705-327-2092"],"p":[{"n":"Rosie","b":"Cockapoo","s":"Medium","af":58.75,"lf":60.0,"vc":8}],"tv":8,"at":9.38,"ya":["2023","2024","2025"],"lv":"17-Nov-25","fy":"2023"},{"id":48,"n":"Jordy N Morin","an":["Jordyn Morin"],"ph":["705-229-7699"],"p":[{"n":"Sookie","b":"Shihtzu X Bichon","s":"Small","af":50.0,"lf":50.0,"vc":8}],"tv":8,"at":8.57,"ya":["2023","2024","2025"],"lv":"10-Sep-25","fy":"2023"},{"id":61,"n":"Donaldson","an":[],"ph":["705-323-6676"],"p":[{"n":"Piper","b":"Golden Retriever","s":"Large","af":80.0,"lf":85.0,"vc":2},{"n":"Baron","b":"","s":"Medium","af":83.75,"lf":85.0,"vc":4},{"n":"Moxie","b":"Mastiff","s":"Medium","af":60.0,"lf":60.0,"vc":1},{"n":"Trigger","b":"Yorkie","s":"Small","af":55.0,"lf":55.0,"vc":1}],"tv":8,"at":18.75,"ya":["2023","2024","2025"],"lv":"7-May-25","fy":"2023"},{"id":95,"n":"Rachael E Edwards","an":[],"ph":["705-818-4887"],"p":[{"n":"Maple","b":"","s":"Medium","af":57.5,"lf":80.0,"vc":4},{"n":"Mia","b":"Golden Retriever","s":"Large","af":57.5,"lf":80.0,"vc":4}],"tv":8,"at":15.71,"ya":["2024","2025"],"lv":"29-Sep-25","fy":"2024"},{"id":111,"n":"Joslin","an":[],"ph":["705-309-1802"],"p":[{"n":"Ruby","b":"Aussie","s":"Large","af":62.5,"lf":65.0,"vc":4},{"n":"Sadie","b":"Pomskey","s":"Small","af":57.5,"lf":55.0,"vc":4}],"tv":8,"at":10.0,"ya":["2025"],"lv":"18-Dec-25","fy":"2025"},{"id":114,"n":"Lisa J. Lawlor","an":["Lawlor"],"ph":["705-238-1701"],"p":[{"n":"Posie","b":"Shih/Yorkie","s":"Small","af":50.0,"lf":50.0,"vc":8}],"tv":8,"at":12.5,"ya":["2025"],"lv":"18-Dec-25","fy":"2025"},{"id":53,"n":"Virginia Shuttleworth","an":[],"ph":["705-826-3928"],"p":[{"n":"Billie","b":"Bernadoodle","s":"XL","af":83.57,"lf":85.0,"vc":7}],"tv":7,"at":13.57,"ya":["2023","2024","2025"],"lv":"10-Jul-25","fy":"2023"},{"id":70,"n":"Julie Erskine","an":[],"ph":["705-330-7505"],"p":[{"n":"Cooper","b":"Golden Doodle","s":"Large","af":78.57,"lf":10.0,"vc":7}],"tv":7,"at":0,"ya":["2024","2025"],"lv":"14-Nov-25","fy":"2024"},{"id":115,"n":"Van Dixhoorn","an":[],"ph":["705-321-9467"],"p":[{"n":"Sadie","b":"","s":"Medium","af":47.5,"lf":10.0,"vc":4},{"n":"Coco","b":"","s":"Medium","af":53.33,"lf":10.0,"vc":3}],"tv":7,"at":25.0,"ya":["2025"],"lv":"5-Sep-25","fy":"2025"},{"id":12,"n":"William John Dunlop","an":[],"ph":["705-323-7685"],"p":[{"n":"Shep","b":"","s":"Medium","af":80.0,"lf":85.0,"vc":6}],"tv":6,"at":5.0,"ya":["2023","2024","2025"],"lv":"26-Aug-25","fy":"2023"},{"id":19,"n":"Josh Horowitz","an":[],"ph":["647-808-3454"],"p":[{"n":"Loki","b":"Bernadoodle (60 lbs)","s":"XL","af":98.33,"lf":100.0,"vc":6}],"tv":6,"at":10.0,"ya":["2023","2024","2025"],"lv":"14-Nov-25","fy":"2023"},{"id":41,"n":"Beasley","an":[],"ph":["705-325-8791"],"p":[{"n":"Ziggy","b":"Westie","s":"Medium","af":60.0,"lf":60.0,"vc":6}],"tv":6,"at":0,"ya":["2023","2024","2025"],"lv":"4-Dec-25","fy":"2023"},{"id":46,"n":"Colleen Loiuse McKee","an":["Mc"],"ph":["416-317-2038"],"p":[{"n":"Bella","b":"Maltese X Shihtzu","s":"Small","af":54.17,"lf":60.0,"vc":6}],"tv":6,"at":11.0,"ya":["2023","2024","2025"],"lv":"22-Oct-25","fy":"2023"},{"id":58,"n":"Ashley Scopel","an":[],"ph":["705-716-5469"],"p":[{"n":"Maeve","b":"Leonberger","s":"XL","af":86.67,"lf":100.0,"vc":6}],"tv":6,"at":15.0,"ya":["2023","2024"],"lv":"22-Jul-24","fy":"2023"},{"id":59,"n":"Michael Donaldson","an":[],"ph":["437-234-4678"],"p":[{"n":"Moxie","b":"Bullmastiff","s":"XL","af":60.0,"lf":60.0,"vc":3},{"n":"Trigs","b":"YorkieXaussieXShep","s":"Large","af":60.0,"lf":60.0,"vc":3}],"tv":6,"at":5.83,"ya":["2023","2024"],"lv":"19-Aug-24","fy":"2023"},{"id":82,"n":"Kara Backway","an":[],"ph":["795-330-6144"],"p":[{"n":"Ozzy","b":"Markiepoo","s":"Medium","af":84.17,"lf":60.0,"vc":6}],"tv":6,"at":5.0,"ya":["2024","2025"],"lv":"4-Dec-25","fy":"2024"},{"id":118,"n":"Aaliyha Rye","an":["Rye"],"ph":["705-955-8900"],"p":[{"n":"Ralph","b":"Shih-poo","s":"Small","af":41.25,"lf":15.0,"vc":4},{"n":"Louis","b":"Pomchi","s":"Small","af":60.0,"lf":60.0,"vc":2}],"tv":6,"at":8.83,"ya":["2025"],"lv":"20-Nov-25","fy":"2025"},{"id":34,"n":"Tracy Sopha","an":[],"ph":["705-238-2223"],"p":[{"n":"Chloe","b":"Golden Retriever","s":"Large","af":82.0,"lf":80.0,"vc":5}],"tv":5,"at":15.0,"ya":["2023","2024"],"lv":"20-Jan-24","fy":"2023"},{"id":42,"n":"Courtney Russell","an":[],"ph":["705-770-9985"],"p":[{"n":"Oakley","b":"Lab X Poodle","s":"Large","af":92.0,"lf":95.0,"vc":5}],"tv":5,"at":10.0,"ya":["2023","2024","2025"],"lv":"1-Oct-25","fy":"2023"},{"id":68,"n":"Stillman","an":[],"ph":["519-771-1159"],"p":[{"n":"Stilly","b":"large Doodle","s":"Medium","af":96.0,"lf":100.0,"vc":5}],"tv":5,"at":12.0,"ya":["2024","2025"],"lv":"7-Apr-25","fy":"2024"},{"id":72,"n":"Reed","an":[],"ph":["705-487-1313"],"p":[{"n":"Ollie","b":"Doodle","s":"Medium","af":93.0,"lf":90.0,"vc":5}],"tv":5,"at":12.5,"ya":["2024","2025"],"lv":"14-Aug-25","fy":"2024"},{"id":78,"n":"Rivers","an":[],"ph":["705-619-3295"],"p":[{"n":"Ryder","b":"Sheppard Cross","s":"Large","af":60.0,"lf":60.0,"vc":5}],"tv":5,"at":10.0,"ya":["2024","2025"],"lv":"27-Oct-25","fy":"2024"},{"id":108,"n":"Hamilton","an":[],"ph":["437-242-3553"],"p":[{"n":"Bruno","b":"Havanese","s":"Small","af":80.0,"lf":50.0,"vc":5}],"tv":5,"at":40.0,"ya":["2024","2025"],"lv":"9-Jun-25","fy":"2024"},{"id":119,"n":"Jennifer L. Kitchen","an":["Kitchen"],"ph":["705-955-2350"],"p":[{"n":"Raksha","b":"Sheepdog","s":"Medium","af":85.0,"lf":85.0,"vc":2},{"n":"Rosie","b":"Poodle","s":"Medium","af":85.0,"lf":85.0,"vc":3}],"tv":5,"at":15.0,"ya":["2025"],"lv":"25-Sep-25","fy":"2025"},{"id":121,"n":"Elizabeth Burrage","an":[],"ph":["705-330-5319"],"p":[{"n":"Ollie","b":"Spaniel","s":"Medium","af":70.0,"lf":70.0,"vc":5}],"tv":5,"at":10.0,"ya":["2025"],"lv":"18-Dec-25","fy":"2025"},{"id":125,"n":"Lisa Laundry","an":["Lisa Landry"],"ph":["705-796-0620"],"p":[{"n":"Cash","b":"Lab X","s":"Large","af":85.0,"lf":100.0,"vc":2},{"n":"Charlotte","b":"Great Pyrennes","s":"Medium","af":130.0,"lf":100.0,"vc":3}],"tv":5,"at":27.0,"ya":["2025"],"lv":"24-Nov-25","fy":"2025"},{"id":2,"n":"Jennifer L Kitchen","an":[],"ph":[],"p":[{"n":"Rufus","b":"small mix","s":"Small","af":55.0,"lf":55.0,"vc":4}],"tv":4,"at":16.25,"ya":["2023","2024"],"lv":"15-Apr-24","fy":"2023"},{"id":3,"n":"Neriman Serizad Bugoi","an":[],"ph":["289-879-1778"],"p":[{"n":"Pepper","b":"Shis/Bihon X","s":"Medium","af":42.5,"lf":50.0,"vc":4}],"tv":4,"at":10.0,"ya":["2023"],"lv":"7-Sep-23","fy":"2023"},{"id":55,"n":"Stillman","an":[],"ph":[],"p":[{"n":"Loki","b":"Doodle","s":"Medium","af":60.0,"lf":60.0,"vc":3},{"n":"Stilly","b":"Std Poodle","s":"Medium","af":90.0,"lf":90.0,"vc":1}],"tv":4,"at":7.5,"ya":["2023","2024"],"lv":"25-Jul-24","fy":"2023"},{"id":69,"n":"unknown client","an":[],"ph":[],"p":[{"n":"Charlie","b":"Golden Retriever","s":"Large","af":75.0,"lf":75.0,"vc":1},{"n":"Lucky","b":"Shihtzu","s":"Small","af":50.0,"lf":50.0,"vc":1},{"n":"Buddy","b":"","s":"Medium","af":50.0,"lf":50.0,"vc":1},{"n":"Carly","b":"","s":"Medium","af":90.0,"lf":90.0,"vc":1}],"tv":4,"at":5.0,"ya":["2024"],"lv":"3-Oct-24","fy":"2024"},{"id":81,"n":"Kara Backway","an":[],"ph":["705-330-6144"],"p":[{"n":"OJ","b":"Markie","s":"Medium","af":63.75,"lf":65.0,"vc":4}],"tv":4,"at":5.0,"ya":["2024","2025"],"lv":"4-Dec-25","fy":"2024"},{"id":83,"n":"Adams","an":[],"ph":["905-436-8197"],"p":[{"n":"Oliver","b":"Golden Doodle","s":"Large","af":68.75,"lf":80.0,"vc":4}],"tv":4,"at":15.0,"ya":["2024","2025"],"lv":"29-Sep-25","fy":"2024"},{"id":113,"n":"Feaver","an":[],"ph":["705-717-4357"],"p":[{"n":"Merdock","b":"","s":"Medium","af":80.0,"lf":80.0,"vc":4}],"tv":4,"at":55.0,"ya":["2025"],"lv":"11-Dec-25","fy":"2025"},{"id":127,"n":"Shannon Russell","an":[],"ph":["705-770-1646"],"p":[{"n":"Blake","b":"Cockapoo","s":"Medium","af":62.5,"lf":65.0,"vc":2},{"n":"Dexter","b":"Doodle","s":"Medium","af":80.0,"lf":80.0,"vc":2}],"tv":4,"at":10.0,"ya":["2025"],"lv":"3-Nov-25","fy":"2025"},{"id":24,"n":"Mary Nichols","an":[],"ph":["705-345-2699"],"p":[{"n":"Merlyn","b":"","s":"Medium","af":30.0,"lf":30.0,"vc":2},{"n":"Vador","b":"","s":"Medium","af":50.0,"lf":50.0,"vc":1}],"tv":3,"at":20.0,"ya":["2023"],"lv":"14-Dec-23","fy":"2023"},{"id":33,"n":"Patricia Keith","an":[],"ph":["705-955-1988"],"p":[{"n":"Gizmo","b":"Golden","s":"Large","af":83.33,"lf":80.0,"vc":3}],"tv":3,"at":16.67,"ya":["2023","2024"],"lv":"8-Apr-24","fy":"2023"},{"id":87,"n":"Martins","an":[],"ph":["647-916-9534"],"p":[{"n":"Angel","b":"Yorkie","s":"Small","af":53.33,"lf":55.0,"vc":3}],"tv":3,"at":5.0,"ya":["2024","2025"],"lv":"18-Sep-25","fy":"2024"},{"id":103,"n":"Wallis","an":[],"ph":["705-323-2031"],"p":[{"n":"Milo","b":"Shipoo","s":"Small","af":55.0,"lf":55.0,"vc":3}],"tv":3,"at":10.0,"ya":["2024","2025"],"lv":"14-Jul-25","fy":"2024"},{"id":109,"n":"Crawshaw","an":[],"ph":["705-345-9233"],"p":[{"n":"Winston","b":"Bernadoodle","s":"XL","af":101.67,"lf":90.0,"vc":3}],"tv":3,"at":15.0,"ya":["2024","2025"],"lv":"27-Oct-25","fy":"2024"},{"id":129,"n":"Cynthia J. Cox","an":[],"ph":["705-238-1741"],"p":[{"n":"Evie","b":"Mini Sheepdoodle","s":"Medium","af":80.0,"lf":80.0,"vc":3}],"tv":3,"at":16.67,"ya":["2025"],"lv":"14-Nov-25","fy":"2025"},{"id":8,"n":"Everitt","an":[],"ph":["705-238-7375"],"p":[{"n":"Rusty","b":"Aussie","s":"Large","af":75.0,"lf":80.0,"vc":2}],"tv":2,"at":7.5,"ya":["2023"],"lv":"31-Jul-23","fy":"2023"},{"id":20,"n":"Ethan","an":[],"ph":[],"p":[{"n":"Ziggy","b":"","s":"Medium","af":50.0,"lf":50.0,"vc":1},{"n":"Kailo","b":"","s":"Medium","af":70.0,"lf":70.0,"vc":1}],"tv":2,"at":0,"ya":["2023"],"lv":"3-Jun-23","fy":"2023"},{"id":21,"n":"Blair Mangan","an":[],"ph":["705-345-4550"],"p":[{"n":"Quill","b":"Golden X Italian Spinone","s":"Large","af":80.0,"lf":80.0,"vc":2}],"tv":2,"at":10.0,"ya":["2023","2024"],"lv":"19-Aug-24","fy":"2023"},{"id":23,"n":"Blair","an":[],"ph":["705-795-8733"],"p":[{"n":"Betty","b":"Pyrenees","s":"XL","af":70.0,"lf":75.0,"vc":2}],"tv":2,"at":10.0,"ya":["2023"],"lv":"24-Aug-23","fy":"2023"},{"id":32,"n":"Nicole Tayler","an":[],"ph":["705-279-2432"],"p":[{"n":"Zed","b":"Sheppard X","s":"Large","af":50.0,"lf":50.0,"vc":2}],"tv":2,"at":20.0,"ya":["2023","2024"],"lv":"18-Jul-24","fy":"2023"},{"id":52,"n":"Hinds","an":[],"ph":["705-323-2473"],"p":[{"n":"Zoey","b":"Golden Retriever","s":"Large","af":75.0,"lf":80.0,"vc":2}],"tv":2,"at":20.0,"ya":["2023","2024"],"lv":"15-Jul-24","fy":"2023"},{"id":56,"n":"Mary Anca","an":[],"ph":["705-330-1807"],"p":[{"n":"Wiskey","b":"","s":"Medium","af":50.0,"lf":50.0,"vc":1},{"n":"Whiskey","b":"","s":"Medium","af":60.0,"lf":60.0,"vc":1}],"tv":2,"at":10.0,"ya":["2023","2025"],"lv":"8-May-25","fy":"2023"},{"id":64,"n":"Maloney","an":[],"ph":["226-821-5656"],"p":[{"n":"Murphy","b":"Sheppard/Collie","s":"Large","af":67.5,"lf":55.0,"vc":2}],"tv":2,"at":5.0,"ya":["2024"],"lv":"18-Mar-24","fy":"2024"},{"id":67,"n":"Vicki A. Dyer","an":[],"ph":["705-627-3084"],"p":[{"n":"Sofie","b":"Burgie/husky","s":"Large","af":75.0,"lf":75.0,"vc":2}],"tv":2,"at":15.0,"ya":["2024"],"lv":"21-Jun-24","fy":"2024"},{"id":75,"n":"Barbara Patterson","an":[],"ph":["905-391-3858"],"p":[{"n":"Jedi","b":"Sheppard Cross","s":"Large","af":65.0,"lf":65.0,"vc":1},{"n":"Socha","b":"Sheppard Cross","s":"Large","af":65.0,"lf":65.0,"vc":1}],"tv":2,"at":0,"ya":["2024"],"lv":"30-May-24","fy":"2024"},{"id":79,"n":"Nadine Scotland","an":["Scotland"],"ph":["705-717-7681"],"p":[{"n":"Chakia","b":"Samoyed","s":"XL","af":77.5,"lf":80.0,"vc":2}],"tv":2,"at":12.5,"ya":["2024","2025"],"lv":"16-Jan-25","fy":"2024"},{"id":80,"n":"Bernadette Wainman","an":[],"ph":["416-418-6101"],"p":[{"n":"Mylla","b":"Markie","s":"Medium","af":50.0,"lf":50.0,"vc":1},{"n":"Loki","b":"Markie","s":"Medium","af":50.0,"lf":50.0,"vc":1}],"tv":2,"at":10.0,"ya":["2024"],"lv":"17-Jun-24","fy":"2024"},{"id":84,"n":"Shoesmith","an":[],"ph":["289-892-3412"],"p":[{"n":"Olivia","b":"Aussie","s":"Large","af":85.0,"lf":85.0,"vc":2}],"tv":2,"at":17.5,"ya":["2024","2025"],"lv":"22-Jan-25","fy":"2024"},{"id":85,"n":"Elliott","an":[],"ph":[],"p":[{"n":"Buddy","b":"","s":"Medium","af":47.5,"lf":50.0,"vc":2}],"tv":2,"at":10.0,"ya":["2024"],"lv":"7-Oct-24","fy":"2024"},{"id":92,"n":"Emma E Hinds","an":[],"ph":["249-359-7366"],"p":[{"n":"Piper","b":"Golden Retriever","s":"Large","af":82.5,"lf":85.0,"vc":2}],"tv":2,"at":12.5,"ya":["2024","2025"],"lv":"27-Nov-25","fy":"2024"},{"id":96,"n":"Hall","an":[],"ph":[],"p":[{"n":"Sadie","b":"","s":"Medium","af":60.0,"lf":70.0,"vc":2}],"tv":2,"at":0,"ya":["2024","2025"],"lv":"20-Jan-25","fy":"2024"},{"id":97,"n":"Nicole Locker","an":[],"ph":["289-314-0824"],"p":[{"n":"Penny","b":"Maltese X Shihtzu","s":"Small","af":50.0,"lf":50.0,"vc":1},{"n":"Bozo","b":"Maltese X Shihtzu","s":"Small","af":50.0,"lf":50.0,"vc":1}],"tv":2,"at":0,"ya":["2024"],"lv":"26-Sep-24","fy":"2024"},{"id":99,"n":"unknown client","an":[],"ph":["705-794-9698"],"p":[{"n":"Paisley","b":"Aussie","s":"Large","af":50.0,"lf":50.0,"vc":2}],"tv":2,"at":0,"ya":["2024","2025"],"lv":"23-Apr-25","fy":"2024"},{"id":100,"n":"Elizabeth Burrage","an":[],"ph":[],"p":[{"n":"Ollie","b":"Spaniel","s":"Medium","af":50.0,"lf":30.0,"vc":2}],"tv":2,"at":20.0,"ya":["2024","2025"],"lv":"31-Jan-25","fy":"2024"},{"id":104,"n":"Crawford","an":[],"ph":["707-774-8427"],"p":[{"n":"Robbie","b":"Sheltie","s":"Medium","af":70.0,"lf":70.0,"vc":1},{"n":"Guiness","b":"Sheltie","s":"Medium","af":70.0,"lf":70.0,"vc":1}],"tv":2,"at":0,"ya":["2024"],"lv":"20-Nov-24","fy":"2024"},{"id":110,"n":"Penner","an":[],"ph":["705-648-0012"],"p":[{"n":"Hebee","b":"Pug","s":"Small","af":57.5,"lf":50.0,"vc":2}],"tv":2,"at":10.0,"ya":["2025"],"lv":"24-Jul-25","fy":"2025"},{"id":117,"n":"Beasley","an":[],"ph":["705-321-5826"],"p":[{"n":"Kaila","b":"Aussie","s":"Large","af":87.5,"lf":90.0,"vc":2}],"tv":2,"at":0,"ya":["2025"],"lv":"23-Oct-25","fy":"2025"},{"id":120,"n":"Madden","an":[],"ph":["705-323-8990"],"p":[{"n":"Bronco","b":"Golden","s":"Large","af":80.0,"lf":80.0,"vc":2}],"tv":2,"at":12.5,"ya":["2025"],"lv":"17-Sep-25","fy":"2025"},{"id":123,"n":"Ng (April Stewart)","an":[],"ph":["613-639-4137"],"p":[{"n":"Alice","b":"Mini Golden Doodle","s":"Large","af":55.0,"lf":55.0,"vc":1},{"n":"Willow","b":"Cockapoo","s":"Medium","af":65.0,"lf":65.0,"vc":1}],"tv":2,"at":10.0,"ya":["2025"],"lv":"1-May-25","fy":"2025"},{"id":134,"n":"Ward","an":[],"ph":["705-345-0610"],"p":[{"n":"Zoro","b":"Sm Snch","s":"Medium","af":60.0,"lf":60.0,"vc":2}],"tv":2,"at":0,"ya":["2025"],"lv":"3-Nov-25","fy":"2025"},{"id":136,"n":"Emily Watson-Bass","an":[],"ph":["705-795-4351"],"p":[{"n":"Lulu","b":"Australian Cattle Dog","s":"Medium","af":60.0,"lf":60.0,"vc":2}],"tv":2,"at":0,"ya":["2025"],"lv":"20-Nov-25","fy":"2025"},{"id":137,"n":"Kerr (Anya Bronwyn-Wingfield)","an":[],"ph":["403-470-0382"],"p":[{"n":"Steve","b":"Basset Hound","s":"Medium","af":60.0,"lf":60.0,"vc":2}],"tv":2,"at":10.0,"ya":["2025"],"lv":"11-Dec-25","fy":"2025"},{"id":138,"n":"Lauren Heagle","an":[],"ph":["705-326-6589"],"p":[{"n":"Herb","b":"English Bulldog","s":"Medium","af":55.0,"lf":55.0,"vc":1},{"n":"Hazel","b":"English Bulldog","s":"Medium","af":55.0,"lf":55.0,"vc":1}],"tv":2,"at":0,"ya":["2025"],"lv":"10-Oct-25","fy":"2025"},{"id":10,"n":"Marina Kitchen","an":[],"ph":["705-305-2818"],"p":[{"n":"Simba","b":"","s":"Medium","af":40.0,"lf":40.0,"vc":1}],"tv":1,"at":15.0,"ya":["2023"],"lv":"11-May-23","fy":"2023"},{"id":11,"n":"Keri Ann Elliott","an":[],"ph":[],"p":[{"n":"Petey","b":"Lab","s":"Medium","af":55.0,"lf":55.0,"vc":1}],"tv":1,"at":0,"ya":["2023"],"lv":"15-May-23","fy":"2023"},{"id":17,"n":"Ashley Nichols","an":[],"ph":[],"p":[{"n":"Kahlua","b":"","s":"Medium","af":70.0,"lf":70.0,"vc":1}],"tv":1,"at":15.0,"ya":["2023"],"lv":"1-Jun-23","fy":"2023"},{"id":22,"n":"Kayley Smith","an":[],"ph":["705-331-8712"],"p":[{"n":"Harley","b":"Sheppard X Golden","s":"Large","af":70.0,"lf":70.0,"vc":1}],"tv":1,"at":15.0,"ya":["2023"],"lv":"8-Jun-23","fy":"2023"},{"id":26,"n":"Kathy","an":[],"ph":["705-238-1273"],"p":[{"n":"Honey","b":"Doodle","s":"Medium","af":65.0,"lf":65.0,"vc":1}],"tv":1,"at":0,"ya":["2023"],"lv":"15-Jun-23","fy":"2023"},{"id":27,"n":"Lianne Rachelle Haberman","an":[],"ph":[],"p":[{"n":"Gucci","b":"","s":"Medium","af":50.0,"lf":50.0,"vc":1}],"tv":1,"at":10.0,"ya":["2023"],"lv":"19-Jun-23","fy":"2023"},{"id":31,"n":"Alicia Sweeney","an":[],"ph":["226-268-0997"],"p":[{"n":"Harper","b":"Multi-poo","s":"Medium","af":60.0,"lf":60.0,"vc":1}],"tv":1,"at":20.0,"ya":["2023"],"lv":"6-Jul-23","fy":"2023"},{"id":35,"n":"D'Saonto","an":[],"ph":["705-984-9440"],"p":[{"n":"Roise","b":"","s":"Medium","af":60.0,"lf":60.0,"vc":1}],"tv":1,"at":0,"ya":["2023"],"lv":"24-Jul-23","fy":"2023"},{"id":37,"n":"Gary","an":[],"ph":["416-460-8175"],"p":[{"n":"Ruby","b":"","s":"Medium","af":70.0,"lf":70.0,"vc":1}],"tv":1,"at":0,"ya":["2023"],"lv":"17-Aug-23","fy":"2023"},{"id":39,"n":"Brittany Mclennan","an":[],"ph":["705-331-1530"],"p":[{"n":"Hugo","b":"American Bulldog","s":"Medium","af":40.0,"lf":40.0,"vc":1}],"tv":1,"at":0,"ya":["2023"],"lv":"24-Aug-23","fy":"2023"},{"id":47,"n":"Michele E Cranney","an":[],"ph":[],"p":[{"n":"Moose","b":"Sheppard X Husky","s":"Large","af":90.0,"lf":90.0,"vc":1}],"tv":1,"at":30.0,"ya":["2023"],"lv":"12-Oct-23","fy":"2023"},{"id":49,"n":"Nicholls","an":[],"ph":["705-955-9211"],"p":[{"n":"Sassy","b":"Bernese","s":"Medium","af":80.0,"lf":80.0,"vc":1}],"tv":1,"at":5.0,"ya":["2023"],"lv":"12-Oct-23","fy":"2023"},{"id":57,"n":"Witteman","an":[],"ph":["705-238-9314"],"p":[{"n":"Carly","b":"Golden Retriever","s":"Large","af":80.0,"lf":80.0,"vc":1}],"tv":1,"at":20.0,"ya":["2023"],"lv":"18-Nov-23","fy":"2023"},{"id":60,"n":"Beverley Lewis","an":[],"ph":["647-465-5258"],"p":[{"n":"Ellie","b":"","s":"Medium","af":25.0,"lf":25.0,"vc":1}],"tv":1,"at":0,"ya":["2023"],"lv":"29-Nov-23","fy":"2023"},{"id":62,"n":"Gardy","an":[],"ph":["705-345-2272"],"p":[{"n":"Coco","b":"","s":"Medium","af":50.0,"lf":50.0,"vc":1}],"tv":1,"at":10.0,"ya":["2023"],"lv":"14-Dec-23","fy":"2023"},{"id":63,"n":"Lindsay MacNeil","an":[],"ph":[],"p":[{"n":"Reese","b":"Doodle","s":"Medium","af":70.0,"lf":70.0,"vc":1}],"tv":1,"at":55.0,"ya":["2023"],"lv":"21-Dec-23","fy":"2023"},{"id":65,"n":"Lisa Stevenson","an":[],"ph":[],"p":[{"n":"\"Puppy\"","b":"Cockapoo","s":"Medium","af":45.0,"lf":45.0,"vc":1}],"tv":1,"at":10.0,"ya":["2024"],"lv":"20-Jan-24","fy":"2024"},{"id":66,"n":"Mairyn Lalonde","an":[],"ph":["705-345-1782"],"p":[{"n":"Baxter","b":"Doodle","s":"Medium","af":75.0,"lf":75.0,"vc":1}],"tv":1,"at":0,"ya":["2024"],"lv":"29-Feb-24","fy":"2024"},{"id":71,"n":"Lahay","an":[],"ph":[],"p":[{"n":"Rocky","b":"Pomsky","s":"Small","af":55.0,"lf":55.0,"vc":1}],"tv":1,"at":10.0,"ya":["2024"],"lv":"18-Apr-24","fy":"2024"},{"id":73,"n":"Ball","an":[],"ph":[],"p":[{"n":"Chloe","b":"","s":"Medium","af":80.0,"lf":80.0,"vc":1}],"tv":1,"at":20.0,"ya":["2024"],"lv":"3-May-24","fy":"2024"},{"id":74,"n":"Lot 88","an":[],"ph":[],"p":[{"n":"Charlie","b":"","s":"Medium","af":50.0,"lf":50.0,"vc":1}],"tv":1,"at":10.0,"ya":["2024"],"lv":"6-May-24","fy":"2024"},{"id":77,"n":"Russell Cole","an":[],"ph":["647-824-7898"],"p":[{"n":"Kiwi","b":"Cavachon/poodle","s":"Medium","af":50.0,"lf":50.0,"vc":1}],"tv":1,"at":10.0,"ya":["2024"],"lv":"6-Jun-24","fy":"2024"},{"id":86,"n":"Mickhelle Scott","an":[],"ph":["705-543-9175"],"p":[{"n":"Skully","b":"Golden Doodle","s":"Large","af":90.0,"lf":90.0,"vc":1}],"tv":1,"at":20.0,"ya":["2024"],"lv":"11-Jul-24","fy":"2024"},{"id":88,"n":"Martin","an":[],"ph":["705-345-4454"],"p":[{"n":"Jasmine","b":"Aussie","s":"Large","af":60.0,"lf":60.0,"vc":1}],"tv":1,"at":10.0,"ya":["2024"],"lv":"25-Jul-24","fy":"2024"},{"id":89,"n":"Elizabeth","an":[],"ph":[],"p":[{"n":"Ollie","b":"Spaniel","s":"Medium","af":70.0,"lf":70.0,"vc":1}],"tv":1,"at":10.0,"ya":["2024"],"lv":"29-Jul-24","fy":"2024"},{"id":91,"n":"Sarah Traves","an":[],"ph":["705-279-2213"],"p":[{"n":"Della","b":"Aussie Poodle","s":"Large","af":80.0,"lf":80.0,"vc":1}],"tv":1,"at":20.0,"ya":["2024"],"lv":"26-Aug-24","fy":"2024"},{"id":93,"n":"Snead","an":[],"ph":["705-205-9584"],"p":[{"n":"Walter","b":"Portuguese Water Dog","s":"Large","af":95.0,"lf":95.0,"vc":1}],"tv":1,"at":25.0,"ya":["2024"],"lv":"16-Sep-24","fy":"2024"},{"id":94,"n":"Hamilton","an":[],"ph":[],"p":[{"n":"Bruno","b":"Havanese","s":"Small","af":50.0,"lf":50.0,"vc":1}],"tv":1,"at":10.0,"ya":["2024"],"lv":"19-Sep-24","fy":"2024"},{"id":98,"n":"Cassandra","an":[],"ph":[],"p":[{"n":"Piper","b":"","s":"Medium","af":70.0,"lf":70.0,"vc":1}],"tv":1,"at":0,"ya":["2024"],"lv":"27-Sep-24","fy":"2024"},{"id":102,"n":"Peck","an":[],"ph":[],"p":[{"n":"Leo","b":"Doodle","s":"Medium","af":80.0,"lf":80.0,"vc":1}],"tv":1,"at":5.0,"ya":["2024"],"lv":"21-Oct-24","fy":"2024"},{"id":105,"n":"Timpano","an":[],"ph":[],"p":[{"n":"Harley","b":"","s":"Medium","af":90.0,"lf":90.0,"vc":1}],"tv":1,"at":0,"ya":["2024"],"lv":"21-Nov-24","fy":"2024"},{"id":107,"n":"Kitchen","an":[],"ph":["705-323-6293"],"p":[{"n":"Winston","b":"","s":"Medium","af":50.0,"lf":50.0,"vc":1}],"tv":1,"at":0,"ya":["2024"],"lv":"28-Nov-24","fy":"2024"},{"id":112,"n":"Bedrosian","an":[],"ph":["519-619-9218"],"p":[{"n":"Dante","b":"Shihtzu","s":"Small","af":85.0,"lf":85.0,"vc":1}],"tv":1,"at":20.0,"ya":["2025"],"lv":"6-Feb-25","fy":"2025"},{"id":116,"n":"Wortman","an":[],"ph":["705-325-9183"],"p":[{"n":"Darcey","b":"","s":"Medium","af":50.0,"lf":50.0,"vc":1}],"tv":1,"at":5.0,"ya":["2025"],"lv":"13-Mar-25","fy":"2025"},{"id":122,"n":"Fazackerely","an":[],"ph":["705-627-1865"],"p":[{"n":"Georgia","b":"Golden Retriever","s":"Large","af":80.0,"lf":80.0,"vc":1}],"tv":1,"at":0,"ya":["2025"],"lv":"1-May-25","fy":"2025"},{"id":124,"n":"Campbell","an":[],"ph":["705-323-6931"],"p":[{"n":"Charlie","b":"Yorkie","s":"Small","af":55.0,"lf":55.0,"vc":1}],"tv":1,"at":10.0,"ya":["2025"],"lv":"8-May-25","fy":"2025"},{"id":126,"n":"Rachael Frerichs","an":[],"ph":["705-794-3389"],"p":[{"n":"Maverick","b":"Rough Coat Collie","s":"Large","af":100.0,"lf":100.0,"vc":1}],"tv":1,"at":0,"ya":["2025"],"lv":"28-May-25","fy":"2025"},{"id":128,"n":"Stride","an":[],"ph":["705-558-9883"],"p":[{"n":"Harlow","b":"Husky","s":"Large","af":65.0,"lf":65.0,"vc":1}],"tv":1,"at":0,"ya":["2025"],"lv":"9-Jun-25","fy":"2025"},{"id":130,"n":"Jesica Rose Harrington","an":[],"ph":["705-794-7150"],"p":[{"n":"Luna","b":"German Sheppard","s":"Large","af":90.0,"lf":90.0,"vc":1}],"tv":1,"at":0,"ya":["2025"],"lv":"3-Jul-25","fy":"2025"},{"id":131,"n":"Gurmond","an":[],"ph":["705-828-7604"],"p":[{"n":"Ouggie","b":"Caliver/Cockapoo","s":"Medium","af":65.0,"lf":65.0,"vc":1}],"tv":1,"at":5.0,"ya":["2025"],"lv":"14-Jul-25","fy":"2025"},{"id":132,"n":"Michele Termini","an":[],"ph":["416-567-6632"],"p":[{"n":"Lucy","b":"shihtzu","s":"Small","af":75.0,"lf":75.0,"vc":1}],"tv":1,"at":0,"ya":["2025"],"lv":"27-Jul-25","fy":"2025"},{"id":133,"n":"?","an":[],"ph":["705-350-1744"],"p":[{"n":"Nisho","b":"Bichon","s":"Small","af":50.0,"lf":50.0,"vc":1}],"tv":1,"at":10.0,"ya":["2025"],"lv":"28-Jul-25","fy":"2025"},{"id":135,"n":"Kathleen Holmes","an":[],"ph":["705-327-8118"],"p":[{"n":"Betty","b":"shihtzu","s":"Small","af":65.0,"lf":65.0,"vc":1}],"tv":1,"at":0,"ya":["2025"],"lv":"10-Sep-25","fy":"2025"},{"id":139,"n":"Ryan","an":[],"ph":["705-327-3958"],"p":[{"n":"Shadow","b":"Yorkie","s":"Small","af":50.0,"lf":50.0,"vc":1}],"tv":1,"at":0,"ya":["2025"],"lv":"20-Oct-25","fy":"2025"},{"id":140,"n":"VanBoxmeer","an":[],"ph":["705-321-9094"],"p":[{"n":"Maizi","b":"Golden Doodle","s":"Large","af":60.0,"lf":60.0,"vc":1}],"tv":1,"at":5.0,"ya":["2025"],"lv":"23-Oct-25","fy":"2025"},{"id":141,"n":"Figg","an":[],"ph":["705-359-4504"],"p":[{"n":"Essie","b":"Shihtzu","s":"Small","af":60.0,"lf":60.0,"vc":1}],"tv":1,"at":10.0,"ya":["2025"],"lv":"30-Oct-25","fy":"2025"},{"id":142,"n":"Cloette Patsakos","an":[],"ph":["647-533-3381"],"p":[{"n":"Abby","b":"Mini Cockapoo","s":"Medium","af":45.0,"lf":45.0,"vc":1}],"tv":1,"at":10.0,"ya":["2025"],"lv":"24-Nov-25","fy":"2025"},{"id":143,"n":"Hailey Decaire","an":[],"ph":[],"p":[{"n":"Beau","b":"","s":"Medium","af":20.0,"lf":20.0,"vc":1}],"tv":1,"at":0,"ya":["2025"],"lv":"9-Dec-25","fy":"2025"},{"id":144,"n":"Smith","an":[],"ph":["705-826-4069"],"p":[{"n":"Fionn","b":"Poodle/Bichon","s":"Medium","af":65.0,"lf":65.0,"vc":1}],"tv":1,"at":5.0,"ya":["2025"],"lv":"11-Dec-25","fy":"2025"},{"id":145,"n":"Miller","an":[],"ph":["705-726-1237"],"p":[{"n":"Bentley","b":"Shihtzu","s":"Small","af":60.0,"lf":60.0,"vc":1}],"tv":1,"at":10.0,"ya":["2025"],"lv":"11-Dec-25","fy":"2025"},{"id":146,"n":"Keith","an":[],"ph":["416-540-7586"],"p":[{"n":"Jackson","b":"Yorkie","s":"Small","af":55.0,"lf":55.0,"vc":1}],"tv":1,"at":10.0,"ya":["2025"],"lv":"15-Dec-25","fy":"2025"},{"id":147,"n":"Theresa L. McDonough","an":[],"ph":["705-238-2788"],"p":[{"n":"Ollie","b":"Yorkie","s":"Small","af":55.0,"lf":55.0,"vc":1}],"tv":1,"at":20.0,"ya":["2025"],"lv":"15-Dec-25","fy":"2025"}];
+
+// Expand compact format
+const CLIENTS = RAW.map(c => ({
+  id: c.id, name: c.n, altNames: c.an, phones: c.ph,
+  pets: c.p.map(p => ({ name: p.n, breed: p.b, size: p.s, avgFee: p.af, lastFee: p.lf, visitCount: p.vc })),
+  totalVisits: c.tv, avgTip: c.at, yearsActive: c.ya, lastVisit: c.lv, firstYear: c.fy,
+  // These are editable fields stored in memory
+  notes: [], temperament: {}, preferredLocation: null
+}));
+
+// ===== STATE =====
+let state = {
+  view: 'clients', // clients | schedule | automations
+  search: '',
+  searchFocused: false,
+  selectedClient: null,
+  showBookModal: false,
+  bookClient: null,
+  bookPet: null,
+  scheduleDate: new Date().toISOString().split('T')[0],
+  location: 'main', // main | secondary
+  schedule: generateDemoSchedule(),
+  automations: {
+    followUp: true,
+    reminderDay: true,
+    reminder3Day: true,
+    birthdayGreeting: false,
+    noShowAlert: true,
+    rebookPrompt: true,
+  },
+  newNote: '',
+};
+
+// Generate a realistic demo schedule
+function generateDemoSchedule() {
+  const today = new Date().toISOString().split('T')[0];
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  return {
+    [today]: {
+      main: [
+        { time: '9:00', dog: 'Milo', breed: 'Cavachon', size: 'Small', client: 'Joanna Pesard', stage: 'checkin', fee: 55, notes: '', separate: false },
+        { time: '9:00', dog: 'Chloe', breed: 'Cavachon', size: 'Small', client: 'Joanna Pesard', stage: 'checkin', fee: 55, notes: '', separate: false },
+        { time: '9:30', dog: 'Rocky', breed: 'Labradoodle', size: 'Large', client: 'David & Joanne Rose', stage: 'bath', fee: 80, notes: '', separate: false },
+        { time: '10:00', dog: 'Lily', breed: 'Golden', size: 'Large', client: 'Sabrina Daly', stage: 'checkin', fee: 70, notes: '', separate: false },
+        { time: '11:00', dog: 'Milo', breed: 'Cavachon', size: 'Small', client: 'Joanna Pesard', stage: 'groom', fee: 0, notes: '', separate: false },
+        { time: '11:00', dog: 'Rocky', breed: 'Labradoodle', size: 'Large', client: 'David & Joanne Rose', stage: 'dry', fee: 0, notes: '', separate: false },
+        { time: '11:30', dog: 'Chloe', breed: 'Cavachon', size: 'Small', client: 'Joanna Pesard', stage: 'groom', fee: 0, notes: '', separate: false },
+        { time: '12:00', dog: 'Lily', breed: 'Golden', size: 'Large', client: 'Sabrina Daly', stage: 'bath', fee: 0, notes: '', separate: false },
+        { time: '12:30', dog: 'Milo', breed: 'Cavachon', size: 'Small', client: 'Joanna Pesard', stage: 'pickup', fee: 0, notes: '', separate: false },
+        { time: '12:30', dog: 'Rocky', breed: 'Labradoodle', size: 'Large', client: 'David & Joanne Rose', stage: 'groom', fee: 0, notes: '', separate: false },
+        { time: '1:00', dog: 'Chloe', breed: 'Cavachon', size: 'Small', client: 'Joanna Pesard', stage: 'pickup', fee: 0, notes: '', separate: false },
+        { time: '1:30', dog: 'Lily', breed: 'Golden', size: 'Large', client: 'Sabrina Daly', stage: 'groom', fee: 0, notes: '', separate: false },
+        { time: '2:00', dog: 'Rocky', breed: 'Labradoodle', size: 'Large', client: 'David & Joanne Rose', stage: 'pickup', fee: 0, notes: '', separate: false },
+        { time: '2:30', dog: 'Lily', breed: 'Golden', size: 'Large', client: 'Sabrina Daly', stage: 'pickup', fee: 0, notes: '', separate: false },
+      ],
+      secondary: [
+        { time: '9:00', dog: 'Dumpling', breed: 'Chow Chow', size: 'Large', client: 'Kathleen Shaughnessy', stage: 'checkin', fee: 80, notes: 'Needs space from other dogs', separate: true },
+        { time: '10:00', dog: 'Dumpling', breed: 'Chow Chow', size: 'Large', client: 'Kathleen Shaughnessy', stage: 'bath', fee: 0, notes: '', separate: true },
+        { time: '11:30', dog: 'Dumpling', breed: 'Chow Chow', size: 'Large', client: 'Kathleen Shaughnessy', stage: 'dry', fee: 0, notes: 'Extra dry time — double coat', separate: true },
+        { time: '1:00', dog: 'Dumpling', breed: 'Chow Chow', size: 'Large', client: 'Kathleen Shaughnessy', stage: 'groom', fee: 0, notes: '', separate: true },
+        { time: '2:30', dog: 'Dumpling', breed: 'Chow Chow', size: 'Large', client: 'Kathleen Shaughnessy', stage: 'pickup', fee: 0, notes: '', separate: true },
+      ]
+    },
+    [tomorrow]: {
+      main: [
+        { time: '9:00', dog: 'Libby', breed: 'Mini Schnauzer', size: 'Small', client: 'Leigh E Majury', stage: 'checkin', fee: 65, notes: '', separate: false },
+        { time: '9:30', dog: 'Molly', breed: 'Shipoo', size: 'Small', client: 'Wallis / Borrelli', stage: 'checkin', fee: 55, notes: '', separate: false },
+        { time: '9:30', dog: 'Zoey', breed: 'Shipoo', size: 'Small', client: 'Wallis / Borrelli', stage: 'checkin', fee: 55, notes: '', separate: false },
+        { time: '10:30', dog: 'Harlow', breed: 'Golden Doodle', size: 'Large', client: 'Lesley Santos', stage: 'checkin', fee: 80, notes: '', separate: false },
+        { time: '10:30', dog: 'Miles', breed: 'Shipoo', size: 'Small', client: 'Lesley Santos', stage: 'checkin', fee: 55, notes: '', separate: false },
+      ],
+      secondary: []
+    }
+  };
+}
+
+// ===== HELPERS =====
+const $ = s => document.querySelector(s);
+const fmt = v => '$' + Number(v).toFixed(0);
+const petIcon = size => ({ Small: '🐕', Medium: '🐕‍🦺', Large: '🦮', XL: '🐻' })[size] || '🐕';
+const stageLabel = s => ({ checkin: 'Check-in', bath: 'Bath', dry: 'Dry', groom: 'Groom', pickup: 'Pick-up' })[s] || s;
+const stageClass = s => 'stage-' + s;
+
+function tierBadge(c) {
+  const v = c.totalVisits;
+  const y = c.yearsActive.length;
+  if (v >= 25 && y >= 3) return { text: 'VIP', cls: 'badge-vip' };
+  if (v >= 15 && y >= 2) return { text: 'Loyal', cls: 'badge-loyal' };
+  if (v >= 8 && y <= 2) return { text: 'Growing', cls: 'badge-new' };
+  if (v <= 3) return { text: 'New', cls: 'badge-new' };
+  return { text: 'Regular', cls: 'badge-loyal' };
+}
+
+function searchClients(query) {
+  if (!query) return CLIENTS.slice(0, 20);
+  const q = query.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const qDigits = query.replace(/\D/g, '');
+
+  return CLIENTS.filter(c => {
+    // Phone search
+    if (qDigits.length >= 3) {
+      const phones = c.phones.map(p => p.replace(/\D/g, '')).join(' ');
+      if (phones.includes(qDigits)) return true;
+    }
+    // Name search
+    const names = [c.name, ...c.altNames].join(' ').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (names.includes(q)) return true;
+    // Pet name search
+    const pets = c.pets.map(p => p.name.toLowerCase()).join(' ');
+    if (pets.includes(q)) return true;
+    // Breed search
+    const breeds = c.pets.map(p => p.breed.toLowerCase()).join(' ');
+    if (breeds.includes(q)) return true;
+    return false;
+  }).slice(0, 30);
+}
+
+function getCapacity(date, loc) {
+  const daySchedule = state.schedule[date];
+  if (!daySchedule) return { used: 0, max: loc === 'main' ? 6 : 3, pct: 0 };
+  const slots = daySchedule[loc] || [];
+  // Count unique dogs (checkin stage only)
+  const dogs = new Set(slots.filter(s => s.stage === 'checkin').map(s => s.dog));
+  const max = loc === 'main' ? 6 : 3;
+  return { used: dogs.size, max, pct: Math.min(100, Math.round((dogs.size / max) * 100)) };
+}
+
+function checkConflicts(date, loc, size, separate) {
+  const daySchedule = state.schedule[date];
+  if (!daySchedule) return { ok: true, msg: 'Day is open — no conflicts.' };
+  const slots = daySchedule[loc] || [];
+  const cap = getCapacity(date, loc);
+  const warnings = [];
+
+  if (cap.used >= cap.max) {
+    return { ok: false, msg: `${loc === 'main' ? 'Main' : 'Secondary'} location is full (${cap.max} dogs). Try the other location or another day.` };
+  }
+
+  // Check if any dog in that slot needs separation
+  const hasSeparateDog = slots.some(s => s.separate);
+  if (separate && slots.length > 0 && !hasSeparateDog) {
+    warnings.push('This dog needs separation — consider booking at the secondary location alone.');
+  }
+  if (hasSeparateDog && !separate) {
+    warnings.push('A dog needing separation is already booked here. Adding more dogs may cause issues.');
+  }
+
+  // XL dog space warning
+  if (size === 'XL') {
+    const xlCount = slots.filter(s => s.size === 'XL' && s.stage === 'checkin').length;
+    if (xlCount >= 1) warnings.push('Another XL dog is already booked. Space may be tight.');
+  }
+
+  if (warnings.length) return { ok: true, msg: warnings.join(' ') };
+  return { ok: true, msg: `${cap.max - cap.used} spot${cap.max - cap.used !== 1 ? 's' : ''} available. No conflicts detected.` };
+}
+
+function formatDateNice(d) {
+  const date = new Date(d + 'T12:00:00');
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  const tomorrowStr = new Date(today.getTime() + 86400000).toISOString().split('T')[0];
+  if (d === todayStr) return 'Today — ' + days[date.getDay()] + ', ' + months[date.getMonth()] + ' ' + date.getDate();
+  if (d === tomorrowStr) return 'Tomorrow — ' + days[date.getDay()] + ', ' + months[date.getMonth()] + ' ' + date.getDate();
+  return days[date.getDay()] + ', ' + months[date.getMonth()] + ' ' + date.getDate();
+}
+
+// ===== RENDER =====
+function render() {
+  const app = $('#app');
+  let html = '';
+
+  // Header
+  html += `<div class="header"><h1>🐾 Tidy Tails</h1><div class="sub">Client & Schedule Manager</div></div>`;
+
+  // Main content based on view
+  html += '<div class="content">';
+
+  if (state.selectedClient) {
+    html += renderClientDetail(state.selectedClient);
+  } else if (state.view === 'clients') {
+    html += renderClientsView();
+  } else if (state.view === 'schedule') {
+    html += renderScheduleView();
+  } else if (state.view === 'automations') {
+    html += renderAutomationsView();
+  }
+
+  html += '</div>';
+
+  // Bottom nav
+  if (!state.selectedClient) {
+    html += renderBottomNav();
+  }
+
+  // Modal
+  if (state.showBookModal) {
+    html += renderBookModal();
+  }
+
+  app.innerHTML = html;
+  bindEvents();
+}
+
+function renderClientsView() {
+  let html = '';
+
+  // Search
+  html += `<div class="search-wrap">
+    <div class="search-box ${state.searchFocused ? 'focused' : ''}">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="search-input" placeholder="Search by phone, dog name, or client..." value="${state.search}" autocomplete="off" inputmode="search">
+      ${state.search ? '<button class="clear-btn" onclick="clearSearch()">✕</button>' : ''}
+    </div>
+  </div>`;
+
+  // Results
+  const results = searchClients(state.search);
+
+  if (results.length === 0) {
+    html += `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">No clients found.<br>Try a phone number, dog name, or client name.</div></div>`;
+  } else {
+    const label = state.search ? `${results.length} result${results.length !== 1 ? 's' : ''}` : 'Recent clients';
+    html += `<div style="padding: 8px 20px 4px; font-size: 11px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">${label}</div>`;
+
+    results.forEach(c => {
+      const badge = tierBadge(c);
+      html += `<div class="card" onclick="selectClient(${c.id})" style="cursor:pointer">
+        <div class="card-header">
+          <div>
+            <div class="client-name">${c.name}</div>
+            ${c.phones.length ? `<div class="client-phone"><a href="tel:${c.phones[0]}" onclick="event.stopPropagation()">${c.phones[0]}</a></div>` : '<div class="client-phone" style="color:#ccc">No phone</div>'}
+          </div>
+          <span class="badge ${badge.cls}">${badge.text}</span>
+        </div>`;
+
+      c.pets.forEach(p => {
+        html += `<div class="pet-row">
+          <div class="pet-icon ${p.size.toLowerCase()}">${petIcon(p.size)}</div>
+          <div class="pet-info">
+            <div class="pet-name">${p.name}</div>
+            <div class="pet-breed">${p.breed || 'Breed unknown'}</div>
+          </div>
+          <div class="pet-price">
+            <div class="pet-fee">${fmt(p.lastFee || p.avgFee)}</div>
+            <div class="pet-size">${p.size}</div>
+          </div>
+        </div>`;
+      });
+
+      html += `<div class="stats-row">
+        <div class="stat"><div class="stat-val">${c.totalVisits}</div><div class="stat-label">Visits</div></div>
+        <div class="stat"><div class="stat-val">${c.yearsActive.length}yr</div><div class="stat-label">Client</div></div>
+        <div class="stat"><div class="stat-val">${c.avgTip > 0 ? fmt(c.avgTip) : '—'}</div><div class="stat-label">Avg Tip</div></div>
+        <div class="stat"><div class="stat-val">${c.lastVisit || '—'}</div><div class="stat-label">Last Visit</div></div>
+      </div></div>`;
+    });
+  }
+
+  return html;
+}
+
+function renderClientDetail(clientId) {
+  const c = CLIENTS.find(x => x.id === clientId);
+  if (!c) return '';
+
+  const badge = tierBadge(c);
+  let html = '';
+
+  html += `<div class="detail-back" onclick="backToList()">← Back</div>`;
+  html += `<div class="detail-header">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="detail-name">${c.name}</div>
+      <span class="badge ${badge.cls}">${badge.text}</span>
+    </div>
+    ${c.altNames.length ? `<div class="detail-meta">Also: ${c.altNames.join(', ')}</div>` : ''}
+    ${c.phones.length ? `<div class="detail-meta" style="color:var(--g);font-weight:600;font-size:15px;margin-top:6px">${c.phones[0]}</div>` : ''}
+    <div class="detail-meta">Client since ${c.firstYear} · ${c.totalVisits} total visits · Last: ${c.lastVisit}</div>
+    <div class="detail-actions">
+      ${c.phones.length ? `<a href="tel:${c.phones[0]}" class="action-btn action-call" style="text-decoration:none">📞 Call</a>` : ''}
+      <button class="action-btn action-book" onclick="openBookModal(${c.id})">📅 Book</button>
+      ${c.phones.length ? `<a href="sms:${c.phones[0]}" class="action-btn action-note" style="text-decoration:none">💬 Text</a>` : ''}
+    </div>
+  </div>`;
+
+  // Pets
+  html += `<div style="padding:4px 16px 4px;font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Pets</div>`;
+  c.pets.forEach(p => {
+    const tempKey = c.id + '-' + p.name;
+    const temp = c.temperament[p.name] || '';
+    html += `<div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <div class="pet-icon ${p.size.toLowerCase()}" style="width:42px;height:42px;font-size:20px">${petIcon(p.size)}</div>
+        <div style="flex:1">
+          <div style="font-size:16px;font-weight:700;color:var(--text)">${p.name}</div>
+          <div style="font-size:12px;color:var(--text3)">${p.breed || 'Unknown breed'} · ${p.size}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:700;color:var(--g)">${fmt(p.lastFee || p.avgFee)}</div>
+          <div style="font-size:10px;color:var(--text3)">Last fee</div>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-val">${p.visitCount}</div><div class="stat-label">Visits</div></div>
+        <div class="stat"><div class="stat-val">${fmt(p.avgFee)}</div><div class="stat-label">Avg Fee</div></div>
+        <div class="stat"><div class="stat-val">${p.size}</div><div class="stat-label">Size</div></div>
+      </div>
+      <div style="margin-top:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:4px">TEMPERAMENT / NOTES</div>
+        <textarea id="temp-${tempKey}" placeholder="e.g., Nervous around large dogs, needs separation..." style="width:100%;padding:8px 10px;border:1.5px solid #e8e4de;border-radius:8px;font-size:12px;font-family:inherit;min-height:40px;resize:vertical">${temp}</textarea>
+        <button onclick="saveTemp(${c.id},'${p.name}')" style="margin-top:4px;padding:6px 12px;border-radius:6px;border:none;background:var(--g4);color:var(--g);font-size:11px;font-weight:700;cursor:pointer">Save Note</button>
+      </div>
+    </div>`;
+  });
+
+  // Tip history
+  html += `<div style="padding:12px 16px 4px;font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Tipping</div>`;
+  html += `<div class="card">
+    <div style="display:flex;gap:12px;align-items:center">
+      <div style="flex:1">
+        <div style="font-size:12px;color:var(--text3)">Average tip</div>
+        <div style="font-size:22px;font-weight:700;color:${c.avgTip > 15 ? 'var(--g)' : c.avgTip > 0 ? 'var(--orange)' : 'var(--red)'}">${c.avgTip > 0 ? fmt(c.avgTip) : 'No tips'}</div>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:12px;color:var(--text3)">Years active</div>
+        <div style="font-size:22px;font-weight:700;color:var(--text)">${c.yearsActive.join(', ')}</div>
+      </div>
+    </div>
+  </div>`;
+
+  return html;
+}
+
+function renderScheduleView() {
+  let html = '';
+  const date = state.scheduleDate;
+  const loc = state.location;
+
+  html += `<div class="schedule-header">
+    <div class="schedule-title">Schedule</div>
+    <div class="schedule-date">${formatDateNice(date)}</div>
+  </div>`;
+
+  // Day navigation
+  html += `<div class="day-nav">
+    <button onclick="changeDay(-1)">← Prev</button>
+    <span class="current-day"><input type="date" value="${date}" onchange="jumpToDate(this.value)" style="border:none;font-size:14px;font-weight:700;color:var(--text);font-family:inherit;background:transparent;text-align:center"></span>
+    <button onclick="changeDay(1)">Next →</button>
+  </div>`;
+
+  // Location toggle
+  html += `<div class="loc-toggle">
+    <button class="loc-btn ${loc === 'main' ? 'active' : ''}" onclick="setLocation('main')">📍 Main Location</button>
+    <button class="loc-btn ${loc === 'secondary' ? 'active' : ''}" onclick="setLocation('secondary')">📍 Secondary</button>
+  </div>`;
+
+  // Capacity
+  const cap = getCapacity(date, loc);
+  const capColor = cap.pct > 80 ? 'var(--red)' : cap.pct > 50 ? 'var(--orange)' : 'var(--g)';
+  html += `<div class="capacity">
+    <div class="capacity-bar"><div class="capacity-fill" style="width:${cap.pct}%;background:${capColor}"></div></div>
+    <div class="capacity-text"><span>${cap.used} of ${cap.max} dogs</span><span style="color:${capColor};font-weight:700">${cap.pct}% full</span></div>
+  </div>`;
+
+  // Add booking button
+  html += `<div style="padding:4px 16px"><button onclick="openBookModal(null)" style="width:100%;padding:12px;border-radius:10px;border:2px dashed var(--g3);background:var(--g5);color:var(--g);font-size:14px;font-weight:700;cursor:pointer">+ Add Booking</button></div>`;
+
+  // Time slots
+  const daySchedule = state.schedule[date];
+  const slots = daySchedule ? (daySchedule[loc] || []) : [];
+
+  if (slots.length === 0) {
+    html += `<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">No bookings yet for this day.<br>Tap "Add Booking" to schedule a groom.</div></div>`;
+  } else {
+    // Group by time
+    let prevTime = '';
+    slots.forEach(s => {
+      const showTime = s.time !== prevTime;
+      prevTime = s.time;
+      html += `<div class="time-slot ${s.separate ? 'slot-alert' : ''}">
+        <div class="time-label">${showTime ? s.time : ''}</div>
+        <div class="slot-content">
+          <div class="slot-dog">${s.dog} <span style="font-weight:400;font-size:12px;color:var(--text3)">— ${s.client}</span></div>
+          <div class="slot-detail">${s.breed} · ${s.size}${s.fee > 0 ? ' · ' + fmt(s.fee) : ''}</div>
+          <span class="slot-stage ${stageClass(s.stage)}">${stageLabel(s.stage)}</span>
+          ${s.notes ? `<div class="alert-text">${s.notes}</div>` : ''}
+          ${s.separate ? `<div class="alert-text">⚠ Needs separation from other dogs</div>` : ''}
+        </div>
+      </div>`;
+    });
+  }
+
+  // Daily summary
+  if (slots.length > 0) {
+    const checkins = slots.filter(s => s.stage === 'checkin');
+    const totalFees = checkins.reduce((sum, s) => sum + s.fee, 0);
+    const uniqueDogs = new Set(checkins.map(s => s.dog)).size;
+    html += `<div class="card" style="margin-top:12px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">Day Summary — ${loc === 'main' ? 'Main' : 'Secondary'}</div>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-val">${uniqueDogs}</div><div class="stat-label">Dogs</div></div>
+        <div class="stat"><div class="stat-val">${fmt(totalFees)}</div><div class="stat-label">Fees</div></div>
+        <div class="stat"><div class="stat-val">${checkins.length > 0 ? checkins[0].time : '—'}</div><div class="stat-label">First In</div></div>
+        <div class="stat"><div class="stat-val">${slots.length > 0 ? slots[slots.length-1].time : '—'}</div><div class="stat-label">Last Out</div></div>
+      </div>
+    </div>`;
+  }
+
+  return html;
+}
+
+function renderAutomationsView() {
+  let html = '';
+
+  html += `<div style="padding:12px 20px 6px"><div style="font-size:18px;font-weight:700;color:var(--text)">Automations</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Smart tools to save admin time and improve service</div></div>`;
+
+  const autos = [
+    { key: 'followUp', title: 'First-Visit Follow-Up', desc: 'Automatically send a text 6 weeks after a new client\'s first visit: "Hi [name], how is [pet] doing since their groom? Would love to book you in again!"', stat: 'Est. value: $1,600/year from recovered clients', icon: '💬' },
+    { key: 'reminderDay', title: '24-Hour Appointment Reminder', desc: 'Text clients the day before their appointment with time, location, and any prep instructions.', stat: 'Reduces no-shows by ~60%', icon: '⏰' },
+    { key: 'reminder3Day', title: '3-Day Booking Confirmation', desc: 'Send confirmation 3 days before: "Just confirming [pet]\'s groom on [date] at [time]. Reply to reschedule."', stat: 'Gives time to fill cancelled slots', icon: '📋' },
+    { key: 'rebookPrompt', title: 'Rebook Prompt', desc: 'If a regular client hasn\'t booked in 8+ weeks, send a gentle nudge: "It\'s been a while since [pet]\'s last groom — want me to book you in?"', stat: 'Targets your top 30 clients automatically', icon: '🔄' },
+    { key: 'noShowAlert', title: 'No-Show Tracker', desc: 'Flag clients who miss appointments without notice. After 2 no-shows, require a deposit for future bookings.', stat: 'Protects revenue from unreliable bookings', icon: '🚩' },
+    { key: 'birthdayGreeting', title: 'Pet Birthday / Anniversary', desc: 'Send a happy message on the anniversary of a pet\'s first visit. Small touch, big loyalty impact.', stat: 'Costs nothing, creates enormous goodwill', icon: '🎂' },
+  ];
+
+  autos.forEach(a => {
+    const on = state.automations[a.key];
+    html += `<div class="auto-card">
+      <div class="auto-header">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:20px">${a.icon}</span>
+          <div class="auto-title">${a.title}</div>
+        </div>
+        <button class="auto-toggle ${on ? 'on' : 'off'}" onclick="toggleAuto('${a.key}')"></button>
+      </div>
+      <div class="auto-desc">${a.desc}</div>
+      <div class="auto-stat">${a.stat}</div>
+    </div>`;
+  });
+
+  // Summer pre-book campaign
+  html += `<div style="padding:12px 20px 6px;margin-top:8px"><div style="font-size:15px;font-weight:700;color:var(--text)">Campaigns</div></div>`;
+
+  html += `<div class="auto-card" style="border-left:3px solid var(--g)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="font-size:20px">☀️</span>
+      <div class="auto-title">Summer Pre-Book Campaign</div>
+    </div>
+    <div class="auto-desc">In June, message all regular clients: "Summer is filling up — want me to lock in July and August slots?" Targets the recurring August dip.</div>
+    <div class="auto-stat">Projected recovery: $500–$800 in August revenue</div>
+    <button style="margin-top:8px;padding:8px 16px;border-radius:8px;border:none;background:var(--g);color:#fff;font-size:12px;font-weight:700;cursor:pointer" onclick="alert('Campaign scheduled for June 1! All regular clients (15+ visits) will receive the pre-book message.')">Schedule for June</button>
+  </div>`;
+
+  html += `<div class="auto-card" style="border-left:3px solid var(--orange)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="font-size:20px">🎄</span>
+      <div class="auto-title">Holiday Booking Rush</div>
+    </div>
+    <div class="auto-desc">In November, send: "Holiday season fills up fast — let me lock in your December groom now." Prevents a repeat of the December 2024 dip.</div>
+    <div class="auto-stat">Projected protection: prevent $1,000+ revenue dip</div>
+    <button style="margin-top:8px;padding:8px 16px;border-radius:8px;border:none;background:var(--orange);color:#fff;font-size:12px;font-weight:700;cursor:pointer" onclick="alert('Campaign scheduled for November 1! All clients with 5+ visits will receive the holiday booking message.')">Schedule for November</button>
+  </div>`;
+
+  html += `<div class="auto-card" style="border-left:3px solid var(--blue)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="font-size:20px">💝</span>
+      <div class="auto-title">Loyalty Recognition</div>
+    </div>
+    <div class="auto-desc">Send a personal note to your 3-year clients: Joanna, Sabrina, Kathleen, David & Joanne, and Dyte/Julie. Offer "loyalty priority" — first access to new booking slots.</div>
+    <div class="auto-stat">5 VIP clients identified from your data</div>
+    <button style="margin-top:8px;padding:8px 16px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-size:12px;font-weight:700;cursor:pointer" onclick="alert('Draft messages created for 5 VIP clients. Review and send from the Clients tab.')">Draft Messages</button>
+  </div>`;
+
+  return html;
+}
+
+function renderBookModal() {
+  const c = state.bookClient ? CLIENTS.find(x => x.id === state.bookClient) : null;
+  const date = state.scheduleDate;
+  const loc = state.location;
+
+  // Check conflicts if we have a pet selected
+  let conflictHtml = '';
+  if (state.bookPet && c) {
+    const pet = c.pets.find(p => p.name === state.bookPet);
+    if (pet) {
+      const check = checkConflicts(date, loc, pet.size, false);
+      if (!check.ok) {
+        conflictHtml = `<div class="conflict-warning">⚠ ${check.msg}</div>`;
+      } else if (check.msg.includes('No conflicts')) {
+        conflictHtml = `<div class="availability-ok">✓ ${check.msg}</div>`;
+      } else {
+        conflictHtml = `<div class="conflict-warning">⚠ ${check.msg}</div>`;
+      }
+    }
+  }
+
+  let html = `<div class="modal-overlay" onclick="closeBookModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>📅 New Booking</h3>
+
+      <label>Client</label>
+      <select id="book-client" onchange="updateBookClient(this.value)">
+        <option value="">Select client...</option>
+        ${CLIENTS.filter(x => x.pets.length > 0).slice(0, 50).map(x =>
+          `<option value="${x.id}" ${state.bookClient === x.id ? 'selected' : ''}>${x.name} (${x.pets.map(p=>p.name).join(', ')})</option>`
+        ).join('')}
+      </select>
+
+      ${c ? `<label>Pet</label>
+      <select id="book-pet" onchange="updateBookPet(this.value)">
+        <option value="">Select pet...</option>
+        ${c.pets.map(p => `<option value="${p.name}" ${state.bookPet === p.name ? 'selected' : ''}>${p.name} — ${p.breed} (${p.size}) — ${fmt(p.lastFee || p.avgFee)}</option>`).join('')}
+      </select>` : ''}
+
+      <label>Date</label>
+      <input type="date" id="book-date" value="${date}" onchange="state.scheduleDate=this.value;render()">
+
+      <label>Drop-off Time</label>
+      <input type="time" id="book-time" value="09:00">
+
+      <label>Location</label>
+      <select id="book-loc">
+        <option value="main" ${loc === 'main' ? 'selected' : ''}>Main Location</option>
+        <option value="secondary" ${loc === 'secondary' ? 'selected' : ''}>Secondary Location</option>
+      </select>
+
+      <label>Special Notes</label>
+      <textarea id="book-notes" placeholder="Temperament issues, special requests, separation needed..."></textarea>
+
+      <div style="margin-top:8px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="book-separate" style="width:18px;height:18px">
+          <span style="font-size:13px;color:var(--text2);text-transform:none;letter-spacing:0">Needs separation from other dogs</span>
+        </label>
+      </div>
+
+      ${conflictHtml}
+
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="closeBookModal()">Cancel</button>
+        <button class="btn-primary" onclick="confirmBooking()">Book It</button>
+      </div>
+    </div>
+  </div>`;
+
+  return html;
+}
+
+function renderBottomNav() {
+  return `<div class="bottom-nav">
+    <button class="nav-item ${state.view === 'clients' ? 'active' : ''}" onclick="setView('clients')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Clients</span>
+    </button>
+    <button class="nav-item ${state.view === 'schedule' ? 'active' : ''}" onclick="setView('schedule')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Schedule</span>
+    </button>
+    <button class="nav-item ${state.view === 'automations' ? 'active' : ''}" onclick="setView('automations')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span>Automate</span>
+    </button>
+  </div>`;
+}
+
+// ===== EVENT HANDLERS =====
+function bindEvents() {
+  const input = document.getElementById('search-input');
+  if (input) {
+    input.addEventListener('input', e => { state.search = e.target.value; render(); setTimeout(() => { const el = document.getElementById('search-input'); if(el) { el.focus(); el.selectionStart = el.selectionEnd = el.value.length; }}, 0); });
+    input.addEventListener('focus', () => { state.searchFocused = true; render(); setTimeout(() => { const el = document.getElementById('search-input'); if(el) el.focus(); }, 0); });
+    input.addEventListener('blur', () => { state.searchFocused = false; });
+  }
+}
+
+function clearSearch() { state.search = ''; render(); }
+function setView(v) { state.view = v; state.selectedClient = null; render(); window.scrollTo(0, 0); }
+function selectClient(id) { state.selectedClient = id; render(); window.scrollTo(0, 0); }
+function backToList() { state.selectedClient = null; render(); }
+
+function openBookModal(clientId) {
+  state.showBookModal = true;
+  state.bookClient = clientId;
+  state.bookPet = null;
+  render();
+}
+
+function closeBookModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  state.showBookModal = false;
+  state.bookClient = null;
+  state.bookPet = null;
+  render();
+}
+
+function updateBookClient(val) {
+  state.bookClient = val ? parseInt(val) : null;
+  state.bookPet = null;
+  render();
+}
+
+function updateBookPet(val) {
+  state.bookPet = val || null;
+  render();
+}
+
+function confirmBooking() {
+  const c = state.bookClient ? CLIENTS.find(x => x.id === state.bookClient) : null;
+  const pet = c && state.bookPet ? c.pets.find(p => p.name === state.bookPet) : null;
+  if (!c || !pet) { alert('Please select a client and pet.'); return; }
+
+  const date = document.getElementById('book-date').value;
+  const time = document.getElementById('book-time').value;
+  const loc = document.getElementById('book-loc').value;
+  const notes = document.getElementById('book-notes').value;
+  const separate = document.getElementById('book-separate').checked;
+
+  const timeStr = new Date('2000-01-01T' + time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(' AM','').replace(' PM','');
+
+  // Create staggered schedule entries
+  if (!state.schedule[date]) state.schedule[date] = { main: [], secondary: [] };
+  if (!state.schedule[date][loc]) state.schedule[date][loc] = [];
+
+  // Calculate stagger times based on size
+  const startMinutes = parseInt(time.split(':')[0]) * 60 + parseInt(time.split(':')[1]);
+  const bathOffset = pet.size === 'XL' ? 60 : pet.size === 'Large' ? 45 : 30;
+  const dryOffset = bathOffset + (pet.size === 'XL' ? 60 : pet.size === 'Large' ? 45 : 30);
+  const groomOffset = dryOffset + (pet.size === 'XL' ? 45 : 30);
+  const pickupOffset = groomOffset + (pet.size === 'XL' ? 60 : pet.size === 'Large' ? 45 : 30);
+
+  const toTimeStr = (mins) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return (h > 12 ? h - 12 : h) + ':' + String(m).padStart(2, '0');
+  };
+
+  const stages = [
+    { time: toTimeStr(startMinutes), stage: 'checkin', fee: pet.lastFee || pet.avgFee },
+    { time: toTimeStr(startMinutes + bathOffset), stage: 'bath', fee: 0 },
+    { time: toTimeStr(startMinutes + dryOffset), stage: 'dry', fee: 0 },
+    { time: toTimeStr(startMinutes + groomOffset), stage: 'groom', fee: 0 },
+    { time: toTimeStr(startMinutes + pickupOffset), stage: 'pickup', fee: 0 },
+  ];
+
+  stages.forEach(s => {
+    state.schedule[date][loc].push({
+      time: s.time, dog: pet.name, breed: pet.breed, size: pet.size,
+      client: c.name, stage: s.stage, fee: s.fee, notes: notes,
+      separate: separate
+    });
+  });
+
+  // Sort by time
+  state.schedule[date][loc].sort((a, b) => {
+    const ta = a.time.split(':').map(Number);
+    const tb = b.time.split(':').map(Number);
+    return (ta[0] * 60 + ta[1]) - (tb[0] * 60 + tb[1]);
+  });
+
+  state.showBookModal = false;
+  state.bookClient = null;
+  state.bookPet = null;
+  state.scheduleDate = date;
+  state.location = loc;
+  state.view = 'schedule';
+  render();
+  window.scrollTo(0, 0);
+}
+
+function changeDay(delta) {
+  const d = new Date(state.scheduleDate + 'T12:00:00');
+  d.setDate(d.getDate() + delta);
+  state.scheduleDate = d.toISOString().split('T')[0];
+  render();
+}
+
+function jumpToDate(val) { state.scheduleDate = val; render(); }
+function setLocation(loc) { state.location = loc; render(); }
+function toggleAuto(key) { state.automations[key] = !state.automations[key]; render(); }
+
+function saveTemp(clientId, petName) {
+  const c = CLIENTS.find(x => x.id === clientId);
+  if (!c) return;
+  const el = document.getElementById('temp-' + clientId + '-' + petName);
+  if (el) {
+    c.temperament[petName] = el.value;
+    alert('Temperament note saved for ' + petName + '!');
+  }
+}
+
+// ===== INIT =====
+render();
+</script>
+</body>
+</html>

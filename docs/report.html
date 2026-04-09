@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tidy Tails — Business Report</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root { --g:#4f7942; --g2:#7ab369; --g3:#b8d9a8; --bg:#f9f6f0; --text:#2d4a27; --text2:#555; --text3:#999; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: Georgia, 'Times New Roman', serif; background:var(--bg); color:var(--text2); min-height:100vh; padding:20px; }
+.wrap { max-width:840px; margin:0 auto; }
+h1 { font-size:22px; font-weight:bold; color:var(--text); margin-bottom:2px; }
+.sub { color:var(--text3); font-size:12px; margin-bottom:20px; }
+.tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px; }
+.tab { padding:7px 16px; border-radius:20px; border:none; cursor:pointer; font-size:13px; font-family:inherit; background:#e0ead9; color:#3a5234; transition:all 0.15s; }
+.tab.active { background:var(--g); color:#fff; font-weight:bold; }
+.section { display:none; }
+.section.active { display:block; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+@media(max-width:600px) { .grid2,.grid3 { grid-template-columns:1fr; } }
+.card { background:#fff; border-radius:12px; border:1px solid #dde8d8; padding:16px 18px; margin-bottom:12px; }
+.metric { background:#f2faf0; border-radius:10px; padding:14px 16px; text-align:center; }
+.metric-label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+.metric-val { font-size:24px; font-weight:bold; color:var(--text); }
+.metric-val-sm { font-size:22px; }
+.metric-sub { font-size:11px; color:#aaa; margin-top:2px; }
+.check-item { font-size:13px; color:var(--text2); border-bottom:1px solid #f0f0f0; padding:5px 0; display:flex; gap:8px; }
+.check { color:var(--g); }
+.warn { color:#a33; }
+p.story { font-size:13px; color:var(--text2); line-height:1.75; margin-bottom:6px; }
+.section-title { font-size:14px; font-weight:bold; color:var(--text); margin-bottom:8px; }
+.pattern { border-bottom:1px solid #f0ece6; padding:7px 0; }
+.pattern-title { font-size:12px; font-weight:bold; color:#3a5234; }
+.pattern-body { font-size:12px; color:#777; }
+table { width:100%; border-collapse:collapse; font-size:12px; }
+thead tr { background:#f2faf0; }
+th { text-align:left; padding:8px 10px; font-size:11px; color:#888; font-weight:bold; border-bottom:1px solid #dde8d8; }
+td { padding:8px 10px; border-bottom:1px solid #f0ece6; }
+tr:nth-child(even) { background:#fafff8; }
+.pill { font-size:11px; padding:2px 8px; border-radius:20px; font-weight:600; white-space:nowrap; display:inline-block; }
+.rec-card { background:#fff; border-radius:0 12px 12px 0; border:1px solid #dde8d8; padding:16px 18px; margin-bottom:12px; }
+.rec-badge { font-size:11px; padding:2px 8px; border-radius:20px; font-weight:bold; display:inline-block; }
+.rec-title { font-size:14px; font-weight:bold; color:var(--text); margin:6px 0; }
+.rec-body { font-size:13px; color:#666; line-height:1.7; margin-bottom:8px; }
+.rec-exec { background:#f7fbf5; border-radius:8px; padding:10px 12px; font-size:12px; color:var(--text2); line-height:1.7; border-left:3px solid var(--g); }
+.rec-exec b { color:var(--g); }
+.metric-border { border:2px solid; }
+.lever { border-bottom:1px solid #f0ece6; padding:8px 0; display:flex; gap:12px; }
+.lever-num { color:var(--g); font-weight:bold; font-size:13px; min-width:16px; }
+.lever-title { font-size:13px; font-weight:bold; color:#3a5234; }
+.lever-body { font-size:12px; color:#888; }
+canvas { max-width:100%; }
+.chart-wrap { position:relative; margin:0 auto; }
+.overflow-x { overflow-x:auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Tidy Tails — Business Report</h1>
+  <p class="sub">Three-year analysis · May 2023 – December 2025 · Based on Samantha's transaction records</p>
+
+  <div class="tabs" id="tabs"></div>
+
+  <!-- OVERVIEW -->
+  <div class="section" id="sec-Overview">
+    <div class="grid3" style="margin-bottom:12px">
+      <div class="metric"><div class="metric-label">2023 gross (8 mo)</div><div class="metric-val">$23,169</div><div class="metric-sub">$2,896/month avg</div></div>
+      <div class="metric"><div class="metric-label">2024 gross (full year)</div><div class="metric-val">$43,847</div><div class="metric-sub">$3,654/month avg</div></div>
+      <div class="metric"><div class="metric-label">2025 gross (full year)</div><div class="metric-val">$48,182</div><div class="metric-sub">$4,015/month avg</div></div>
+    </div>
+    <div class="grid2" style="margin-bottom:12px">
+      <div class="metric"><div class="metric-label">2024 → 2025 growth</div><div class="metric-val metric-val-sm" style="color:#2d7a1f">+10%</div><div class="metric-sub">Full year vs full year</div></div>
+      <div class="metric"><div class="metric-label">Best month ever</div><div class="metric-val metric-val-sm">$4,499</div><div class="metric-sub">October 2025</div></div>
+      <div class="metric"><div class="metric-label">3-year tip growth</div><div class="metric-val metric-val-sm" style="color:#2d7a1f">+82%</div><div class="metric-sub">$1,949 → $3,547</div></div>
+      <div class="metric"><div class="metric-label">2026 projection</div><div class="metric-val metric-val-sm">$53K–$56K</div><div class="metric-sub">Base case</div></div>
+    </div>
+    <div class="card">
+      <div class="section-title">The headline story</div>
+      <p class="story">This business has grown from a $35K annualized pace in 2023 to $48,182 in 2025 — a real, compounding upward trend. Monthly revenue has increased 39% over two years.</p>
+      <p class="story">The growth is coming from two sources: deeper loyalty from existing clients, and a steady stream of new accounts converting to regulars. Ren's Pets, Wallis/Borrelli, and Leigh Majury are all examples of accounts that barely existed in 2023 and are now anchors.</p>
+      <p class="story">The ceiling is becoming a capacity question, not a demand question. At $4,015/month average in 2025, the business is approaching the point where a second groomer stops being optional.</p>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="section-title" style="font-size:13px">What's working</div>
+        <div class="check-item"><span class="check">✓</span>Loyal client base deepening year over year</div>
+        <div class="check-item"><span class="check">✓</span>Ren's Pets commercial account ($220–$540/visit)</div>
+        <div class="check-item"><span class="check">✓</span>Strong October and May across multiple years</div>
+        <div class="check-item"><span class="check">✓</span>Tips growing in raw dollars every year</div>
+        <div class="check-item"><span class="check">✓</span>XL dog pricing has increased meaningfully</div>
+      </div>
+      <div class="card">
+        <div class="section-title" style="font-size:13px">What needs attention</div>
+        <div class="check-item"><span class="warn">!</span>Samantha = 65–70% of all revenue (key-person risk)</div>
+        <div class="check-item"><span class="warn">!</span>August slump repeats every year</div>
+        <div class="check-item"><span class="warn">!</span>~30–40 first-visit clients lost annually</div>
+        <div class="check-item"><span class="warn">!</span>December 2024 anomaly unexplained</div>
+        <div class="check-item"><span class="warn">!</span>Nail trim pricing wildly inconsistent ($5–$35)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRENDS -->
+  <div class="section" id="sec-Trends">
+    <div class="card">
+      <div class="section-title">Monthly gross revenue — all 3 years</div>
+      <div style="display:flex;gap:16px;margin-bottom:12px;font-size:12px;color:#888">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#b8d9a8;display:inline-block"></span>2023</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#7ab369;display:inline-block"></span>2024</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#2d4a27;display:inline-block"></span>2025</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-monthly" height="240"></canvas></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="section-title" style="font-size:13px">Seasonal patterns</div>
+        <div class="pattern"><div class="pattern-title">May & July</div><div class="pattern-body">Consistently strong across all years. Peak grooming season is real.</div></div>
+        <div class="pattern"><div class="pattern-title">August</div><div class="pattern-body">Dips every year — vacation scheduling, not lack of demand.</div></div>
+        <div class="pattern"><div class="pattern-title">October 2025</div><div class="pattern-body">$4,499 — best month in the dataset. Something clicked.</div></div>
+        <div class="pattern"><div class="pattern-title">December 2024</div><div class="pattern-body">$2,492 — anomalous dip. Both surrounding Decembers cleared $3,100+.</div></div>
+        <div class="pattern"><div class="pattern-title">Jan–Mar</div><div class="pattern-body">Growing each year as early-year business has developed.</div></div>
+      </div>
+      <div class="card">
+        <div class="section-title" style="font-size:13px">Year-over-year avg monthly revenue</div>
+        <div class="chart-wrap"><canvas id="chart-yoy" height="180"></canvas></div>
+        <div style="font-size:12px;color:#999;margin-top:8px">39% increase in monthly average from 2023 to 2025</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIENTS -->
+  <div class="section" id="sec-Clients">
+    <div class="card">
+      <div class="section-title">Client visit frequency — all 3 years</div>
+      <div class="overflow-x">
+        <table>
+          <thead><tr><th>Client</th><th>Pet(s)</th><th>2023</th><th>2024</th><th>2025</th><th>Total</th><th>Trend</th><th>Tier</th><th>Tipping habit</th></tr></thead>
+          <tbody id="client-table"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="section-title" style="font-size:13px">Standout movements</div>
+        <div class="pattern"><div class="pattern-title">Wallis/Borrelli</div><div class="pattern-body">Doubled from 4 to 9 visits in one year. Fastest-growing client in the book.</div></div>
+        <div class="pattern"><div class="pattern-title">Ren's Pets</div><div class="pattern-body">0 → 6 → 7 visits. Commercial account now worth $2,500–$3,000/year.</div></div>
+        <div class="pattern"><div class="pattern-title">Leigh Majury</div><div class="pattern-body">2 → 5 → 7. A slow build that is now a reliable anchor.</div></div>
+        <div class="pattern"><div class="pattern-title">Dyte/Julie Handy</div><div class="pattern-body">9 → 4 → 5. Dropped sharply from 2023. Worth a personal check-in.</div></div>
+      </div>
+      <div class="card">
+        <div class="section-title" style="font-size:13px">New client retention problem</div>
+        <p class="story">Roughly 30–40 new client names appear each year and never return. At an average ticket of $80, winning back just 10 of them for 2 more visits is worth $1,600 in annual revenue. First visits are a marketing cost — the payoff is repeat business. A simple 6-week follow-up text would recover a significant portion of these.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIPS -->
+  <div class="section" id="sec-Tips">
+    <div class="grid3" style="margin-bottom:12px">
+      <div class="metric"><div class="metric-label">2023 tips</div><div class="metric-val metric-val-sm">$1,949</div><div class="metric-sub">8.4% of gross</div></div>
+      <div class="metric"><div class="metric-label">2024 tips</div><div class="metric-val metric-val-sm">$2,867</div><div class="metric-sub">6.5% of gross</div></div>
+      <div class="metric"><div class="metric-label">2025 tips</div><div class="metric-val metric-val-sm">$3,547</div><div class="metric-sub">7.4% of gross</div></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Tip revenue by year</div>
+      <div class="chart-wrap"><canvas id="chart-tips" height="160"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Top tippers — client by client</div>
+      <div class="overflow-x">
+        <table>
+          <thead><tr><th>Client</th><th>Avg tip</th><th>Consistency</th><th>3yr est. total</th><th>Notes</th></tr></thead>
+          <tbody id="tipper-table"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="section-title" style="font-size:13px">Why the rate dipped in 2024</div>
+        <p class="story">The 2024 tip rate of 6.5% looks like a problem but isn't. It reflects new commercial clients (Ren's Pets, batch accounts) joining who don't tip on the same terms as individual clients. The loyal client base actually tipped the same or more in 2024. The rate recovered to 7.4% in 2025 as those clients matured. The trend is healthy.</p>
+      </div>
+      <div class="card">
+        <div class="section-title" style="font-size:13px">Zero-tip strategy</div>
+        <p class="story">Kathleen Shaughnessy (19 visits, rarely tips), Lesley Santos (13 visits, rarely tips), and Joanna Pesard (variable) are your high-volume, low-tip clients. Don't confront it — price it. A selective rate increase for these clients normalizes revenue. Add a gratuity prompt to invoices and capture the accidental under-tippers first.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRICING -->
+  <div class="section" id="sec-Pricing">
+    <div class="card">
+      <div class="section-title">Fee ranges by dog size — 3-year trend</div>
+      <div class="overflow-x">
+        <table>
+          <thead><tr><th>Service tier</th><th>2023</th><th>2024</th><th>2025</th><th>Movement</th></tr></thead>
+          <tbody id="pricing-table"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="section-title" style="font-size:13px">Where pricing is strong</div>
+        <div class="check-item"><span class="check">✓</span>XL dogs have seen the best fee growth — Leonberger went from $100 to $140</div>
+        <div class="check-item"><span class="check">✓</span>Large dogs are appropriately priced and increasing steadily</div>
+        <div class="check-item"><span class="check">✓</span>Ren's Pets commercial account is scaling — Dec 2025 session was $540</div>
+        <div class="check-item"><span class="check">✓</span>New client base is absorbing price increases without visible churn</div>
+      </div>
+      <div class="card">
+        <div class="section-title" style="font-size:13px">Where pricing needs work</div>
+        <div class="check-item"><span class="warn">!</span>Nail trims: $5 to $35 for the same service — no consistent rate</div>
+        <div class="check-item"><span class="warn">!</span>Small dogs are still underpriced relative to time investment</div>
+        <div class="check-item"><span class="warn">!</span>No published rate card means every new client negotiates informally</div>
+        <div class="check-item"><span class="warn">!</span>A 5–8% January 2026 increase is justified and overdue</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECOMMENDATIONS -->
+  <div class="section" id="sec-Recommendations"></div>
+
+  <!-- 2026 OUTLOOK -->
+  <div class="section" id="sec-2026 Outlook">
+    <div class="grid3" style="margin-bottom:12px">
+      <div class="metric metric-border" style="border-color:#88888833"><div class="metric-label">Conservative</div><div class="metric-val metric-val-sm" style="color:#888">$48K–$50K</div><div class="metric-sub">No price increase, same volume</div></div>
+      <div class="metric metric-border" style="border-color:#4f794233"><div class="metric-label">Base case</div><div class="metric-val metric-val-sm" style="color:#4f7942">$53K–$56K</div><div class="metric-sub">5–8% price increase + retention</div></div>
+      <div class="metric metric-border" style="border-color:#2d7a1f33"><div class="metric-label">Upside</div><div class="metric-val metric-val-sm" style="color:#2d7a1f">$60K+</div><div class="metric-sub">Second groomer + commercial growth</div></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Revenue trajectory</div>
+      <div class="chart-wrap"><canvas id="chart-trajectory" height="200"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="section-title">The levers that get you to $55K</div>
+      <div class="lever"><span class="lever-num">1</span><div><div class="lever-title">5–8% price increase Jan 2026</div><div class="lever-body">~$2,400–$3,800 additional revenue at current volume. Communicate in November.</div></div></div>
+      <div class="lever"><span class="lever-num">2</span><div><div class="lever-title">Pre-book summer slots</div><div class="lever-body">Recover $500–$800 from the annual August dip.</div></div></div>
+      <div class="lever"><span class="lever-num">3</span><div><div class="lever-title">First-visit follow-up</div><div class="lever-body">10 recovered clients × 2 additional visits × $80 avg = $1,600.</div></div></div>
+      <div class="lever"><span class="lever-num">4</span><div><div class="lever-title">Gratuity prompt on invoices</div><div class="lever-body">$800–$1,200 additional tip revenue at current transaction volume.</div></div></div>
+      <div class="lever"><span class="lever-num">5</span><div><div class="lever-title">Protect Ren's Pets</div><div class="lever-body">Lock in the account with a standing booking. Don't let it go to a competitor.</div></div></div>
+    </div>
+    <div class="card">
+      <div class="section-title">What gets you to $60,000+</div>
+      <p class="story">Adding a second groomer for 1–2 days per week is the only path to $60K+. At current pricing, Samantha and the team are approaching maximum throughput. The demand is there — Ren's Pets alone is scaling toward $3,000+/year, Wallis/Borrelli doubled their visits in one year, and new clients are arriving consistently. The constraint is time, not customers. A second dedicated groomer at even 20 appointments per week adds $1,600–$2,000 in weekly revenue capacity. That is the $60K unlock.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const sections = ["Overview","Trends","Clients","Tips","Pricing","Recommendations","2026 Outlook"];
+const monthly = [
+  {m:"Jan",y23:0,y24:2465,y25:2985},{m:"Feb",y23:0,y24:1890,y25:2866},
+  {m:"Mar",y23:0,y24:2666,y25:2585},{m:"Apr",y23:0,y24:3266,y25:3689},
+  {m:"May",y23:3014,y24:3570,y25:4407},{m:"Jun",y23:3154,y24:3805,y25:3215},
+  {m:"Jul",y23:2885,y24:3890,y25:3803},{m:"Aug",y23:2892,y24:3148,y25:2800},
+  {m:"Sep",y23:2596,y24:3340,y25:3536},{m:"Oct",y23:2754,y24:2988,y25:4499},
+  {m:"Nov",y23:2705,y24:3640,y25:3168},{m:"Dec",y23:3167,y24:2492,y25:3770},
+];
+const clients = [
+  {name:"Joanna Pesard",pet:"Milo + Chloe",breed:"Cavachon x2",y23:16,y24:14,y25:14,tier:"VIP Anchor",tip:"Variable $0–$30"},
+  {name:"Sabrina Daly",pet:"Lily",breed:"Golden",y23:7,y24:7,y25:8,tier:"VIP Tipper",tip:"Always $30–$40"},
+  {name:"Wallis / Borrelli",pet:"Molly + Zoey",breed:"Shipoo x2",y23:0,y24:4,y25:9,tier:"Rising VIP",tip:"Reliable $10"},
+  {name:"Kathleen Shaughnessy",pet:"Dumpling",breed:"Chow Chow",y23:6,y24:6,y25:7,tier:"Loyal Anchor",tip:"Rarely tips"},
+  {name:"David & Joanne Rose",pet:"Rocky",breed:"Labradoodle",y23:5,y24:6,y25:7,tier:"Loyal Anchor",tip:"Reliable $10–$20"},
+  {name:"Leigh E Majury",pet:"Libby",breed:"Mini Schnauzer",y23:2,y24:5,y25:7,tier:"Growing",tip:"Growing $5–$20"},
+  {name:"Ren's Pets",pet:"Multi-dog",breed:"Commercial",y23:0,y24:6,y25:7,tier:"High Value",tip:"Inconsistent"},
+  {name:"Mathew Stefan",pet:"Maple + Braxton",breed:"Golden",y23:4,y24:4,y25:5,tier:"Loyal",tip:"Reliable $10–$30"},
+  {name:"Stacey Cameron",pet:"Stella",breed:"Markie/Doodle",y23:3,y24:4,y25:5,tier:"Loyal",tip:"Reliable $10"},
+  {name:"Lesley Santos",pet:"Harlow + Miles",breed:"Doodle + Shipoo",y23:2,y24:5,y25:6,tier:"Growing",tip:"Rarely tips"},
+  {name:"Pamela Elford",pet:"Phil + Floyd",breed:"Cavachon x2",y23:2,y24:4,y25:6,tier:"Growing",tip:"Reliable $7–$10"},
+  {name:"Dyte / Julie Handy",pet:"Jessie + Douglas",breed:"Aussie + Cat",y23:9,y24:4,y25:5,tier:"Watch",tip:"Always $15–$20"},
+];
+const tippers = [
+  {name:"Sabrina Daly",avg:"$30–$40",consistency:"Always",est:"~$660",note:"Highest rate in the book. Never misses."},
+  {name:"Feaver",avg:"$20–$120",consistency:"Exceptional",est:"~$180",note:"Tipped $120 on an $80 fee in Dec 2025. Outlier — a great one."},
+  {name:"Dyte / Julie Handy",avg:"$15–$20",consistency:"Very reliable",est:"~$320",note:"Consistent across all 3 years."},
+  {name:"Andrews / Waslyk",avg:"$15–$30",consistency:"Reliable",est:"~$180",note:"Large dog, big ticket, generous tip."},
+  {name:"David & Joanne Rose",avg:"$10–$20",consistency:"Reliable",est:"~$270",note:"Tipped $20 in 2025 — improving."},
+  {name:"Mathew Stefan",avg:"$10–$30",consistency:"Reliable",est:"~$145",note:"Tipped $30 in 2025 — increasing generosity."},
+  {name:"Joanna Pesard",avg:"$0–$30",consistency:"Variable",est:"~$410",note:"High total due to volume. Per-visit tip ranges wildly in the same year."},
+  {name:"Leigh E Majury",avg:"$5–$20",consistency:"Growing",est:"~$115",note:"Tips more as relationship deepens."},
+];
+const pricing = [
+  ["Small dog (Cavachon, Schnauzer, Shipoo)","$45–$60","$50–$65","$55–$70","Modest ↑","ok"],
+  ["Medium dog (Aussie, Doodle, Lab X)","$65–$80","$70–$90","$75–$95","Consistent ↑","ok"],
+  ["Large dog (Golden, Labradoodle, Retriever)","$70–$90","$75–$95","$80–$100","Consistent ↑","ok"],
+  ["XL dog (Leonberger, Bernedoodle, Pyrenees)","$85–$120","$110–$155","$120–$145","Strong ↑↑","good"],
+  ["Nail trim","$5–$10","$5–$35","$10–$20","Inconsistent","bad"],
+  ["Ren's Pets (commercial multi-dog)","–","$220–$295","$220–$540","Growing ↑↑","good"],
+];
+const recs = [
+  {color:"#a33",label:"Critical",bg:"#fcebeb",title:"Build a business continuity plan",body:"Samantha drives 65–70% of revenue. An injury, illness, or extended absence eliminates most monthly income with no backup. This is the single highest-priority risk in the business — not because it is likely, but because the consequence is severe.",exec:"Cross-train Annette on 2–3 complex groom types this quarter. Identify one freelance groomer in the area who could step in on short notice. Aim to reduce Samantha's share below 55% within 12 months without reducing her absolute revenue."},
+  {color:"#ba7517",label:"High",bg:"#faeeda",title:"Protect Ren's Pets — it is now a strategic account",body:"Ren's Pets went from nothing in 2023 to 7 visits in 2025 with tickets ranging from $220 to $540. This is likely $2,500–$3,000 per year from a single account. It is a commercial relationship and needs to be managed differently than retail clients.",exec:"Establish a standing monthly or bi-monthly booking with Ren's Pets. Send a proactive schedule confirmation 2 weeks before each session. Offer a small volume discount in exchange for a committed booking cadence — locking in $2,000/year at 5% off beats losing the account."},
+  {color:"#4f7942",label:"Growth",bg:"#eaf5e4",title:"Implement loyalty recognition for 3-year clients",body:"Joanna Pesard, Sabrina Daly, Kathleen Shaughnessy, David & Joanne Rose, and Dyte/Julie Handy have all been clients since 2023. They are the backbone of the business and have received no formal recognition of that loyalty.",exec:"Send a handwritten note or personal text to your top 8–10 long-term clients. Offer them 'loyalty priority' — first access to booking slots before the calendar opens generally. Costs nothing, creates enormous goodwill, and dramatically reduces churn risk from your most valuable clients."},
+  {color:"#4f7942",label:"Growth",bg:"#eaf5e4",title:"Add a gratuity prompt to all receipts",body:"The tip rate dropped to 6.5% in 2024 as new clients joined who didn't know the norm. A soft prompt normalizes tipping for new clients and nudges middle-tier tippers upward. Grooming is a skilled service — a gratuity prompt is appropriate and expected in this industry.",exec:"Add 'Gratuity appreciated — suggested 15–20%' to any written receipt or payment message. Even a verbal mention to first-time clients sets the expectation. This alone is likely worth $800–$1,200 annually at current volume."},
+  {color:"#4f7942",label:"Growth",bg:"#eaf5e4",title:"Standardize pricing with a visible rate card",body:"Nail trims range from $5 to $35 across the dataset. Some dogs receive different prices on repeat visits for the same service. A clear rate card by dog size and service type removes ambiguity and makes annual price increases easier to communicate.",exec:"Create a one-page rate card by size tier (small / medium / large / XL) with fixed add-on prices for nail trims, dematting, and specialty services. Implement a 5–8% increase across all tiers in January 2026 — communicate it in November so clients aren't surprised."},
+  {color:"#4f7942",label:"Growth",bg:"#eaf5e4",title:"Follow up with first-time clients before they disappear",body:"An estimated 30–40 new client names appear each year and never return. At an average ticket of $80, winning back 10 of them for 2 more visits is worth $1,600. First visits are a marketing cost — the payoff is repeat business.",exec:"Send a text 5–6 weeks after every first visit: 'Hi [name], checking in — how is [pet] doing after their groom? Would love to book you in again.' This takes 30 seconds and can be templated. Track new clients who haven't returned within 8 weeks and prioritize those for outreach."},
+  {color:"#4f7942",label:"Growth",bg:"#eaf5e4",title:"Pre-book summer — attack the August dip",body:"August is consistently the weakest month across all three years. Clients go on vacation and forget to reschedule. This is a scheduling problem, not a demand problem — dogs still need grooming in August.",exec:"In June, message all regular clients: 'Summer is filling up — want me to lock in your July and August slots now?' Offer 10% off if booked before June 30. Fill the August calendar in advance before clients disappear."},
+  {color:"#185FA5",label:"Investigate",bg:"#e6f1fb",title:"Find out what drove October 2025",body:"October 2025 at $4,499 is the best month in the entire 3-year dataset by a significant margin. This didn't happen by accident — something changed. Identifying the cause is as valuable as any recommendation here.",exec:"Review the October 2025 transactions carefully. What new clients appeared? Was there a commercial account that drove volume? Was scheduling density different? The answer is in the data — find it and build around it for October 2026."},
+  {color:"#185FA5",label:"Investigate",bg:"#e6f1fb",title:"Understand December 2024 before it repeats",body:"December 2024 at $2,492 is the weakest December in the dataset — $1,278 below December 2025. Something went wrong. This is not seasonal because December 2023 and 2025 were both strong.",exec:"Identify what was different in December 2024. If it was personal (illness, travel), build a contingency plan for future absences. If it was an account issue (Ren's Pets not booked, key client away), build in redundancy so no single account can crater a month."},
+];
+
+// ===== TABS =====
+let activeTab = "Overview";
+const tabsEl = document.getElementById("tabs");
+
+function renderTabs() {
+  tabsEl.innerHTML = sections.map(s =>
+    `<button class="tab ${s===activeTab?'active':''}" onclick="switchTab('${s}')">${s}</button>`
+  ).join('');
+  sections.forEach(s => {
+    const el = document.getElementById('sec-'+s);
+    if(el) el.classList.toggle('active', s===activeTab);
+  });
+}
+
+function switchTab(s) {
+  activeTab = s;
+  renderTabs();
+  // Render charts if switching to a tab with charts
+  if(s === 'Trends') setTimeout(renderTrendCharts, 50);
+  if(s === 'Tips') setTimeout(renderTipChart, 50);
+  if(s === '2026 Outlook') setTimeout(renderTrajectoryChart, 50);
+  window.scrollTo(0,0);
+}
+
+// ===== POPULATE TABLES =====
+function tierColor(t) {
+  if(t==="VIP Anchor"||t==="VIP Tipper") return {bg:"#eaf5e4",color:"#2d7a1f"};
+  if(t==="Rising VIP"||t==="High Value") return {bg:"#e6f1fb",color:"#185FA5"};
+  if(t==="Watch") return {bg:"#fdeaea",color:"#a33"};
+  if(t==="Loyal Anchor") return {bg:"#eaf5e4",color:"#2d7a1f"};
+  return {bg:"#f2f2f2",color:"#555"};
+}
+function consistencyColor(c) {
+  if(c==="Always"||c==="Very reliable") return {bg:"#eaf5e4",color:"#2d7a1f"};
+  if(c==="Exceptional") return {bg:"#e6f1fb",color:"#185FA5"};
+  if(c==="Variable"||c==="Growing") return {bg:"#faeeda",color:"#854F0B"};
+  return {bg:"#eaf5e4",color:"#2d7a1f"};
+}
+
+// Client table
+document.getElementById('client-table').innerHTML = clients.map(c => {
+  const total = c.y23+c.y24+c.y25;
+  const tc = tierColor(c.tier);
+  const arrow = c.y25>c.y24 ? '<span style="color:#2d7a1f">↑</span>' : c.y25<c.y24 ? '<span style="color:#a33">↓</span>' : '<span style="color:#888">→</span>';
+  return `<tr>
+    <td style="font-weight:bold;color:#2d4a27">${c.name}</td>
+    <td style="color:#888;font-size:11px">${c.pet}<br><span style="color:#bbb">${c.breed}</span></td>
+    <td style="text-align:center;color:${c.y23===0?'#ccc':'#555'}">${c.y23||'–'}</td>
+    <td style="text-align:center">${c.y24||'–'}</td>
+    <td style="text-align:center">${c.y25||'–'}</td>
+    <td style="text-align:center;font-weight:bold;color:#4f7942">${total}</td>
+    <td style="text-align:center">${arrow}</td>
+    <td><span class="pill" style="background:${tc.bg};color:${tc.color}">${c.tier}</span></td>
+    <td style="font-size:11px;color:#888">${c.tip}</td>
+  </tr>`;
+}).join('');
+
+// Tipper table
+document.getElementById('tipper-table').innerHTML = tippers.map(t => {
+  const cc = consistencyColor(t.consistency);
+  return `<tr>
+    <td style="font-weight:bold;color:#2d4a27">${t.name}</td>
+    <td style="font-weight:bold">${t.avg}</td>
+    <td><span class="pill" style="background:${cc.bg};color:${cc.color}">${t.consistency}</span></td>
+    <td style="color:#4f7942;font-weight:bold">${t.est}</td>
+    <td style="font-size:11px;color:#888">${t.note}</td>
+  </tr>`;
+}).join('');
+
+// Pricing table
+document.getElementById('pricing-table').innerHTML = pricing.map(([tier,y23,y24,y25,movement,status]) => {
+  const mColor = status==='good'?'#2d7a1f':status==='bad'?'#a33':'#555';
+  return `<tr>
+    <td style="font-weight:bold;color:#2d4a27;font-size:12px">${tier}</td>
+    <td>${y23}</td><td>${y24}</td><td>${y25}</td>
+    <td style="color:${mColor};font-weight:bold">${movement}</td>
+  </tr>`;
+}).join('');
+
+// Recommendations
+document.getElementById('sec-Recommendations').innerHTML = recs.map(r =>
+  `<div class="rec-card" style="border-left:4px solid ${r.color}">
+    <span class="rec-badge" style="background:${r.bg};color:${r.color};border:1px solid ${r.color}22">${r.label}</span>
+    <div class="rec-title">${r.title}</div>
+    <div class="rec-body">${r.body}</div>
+    <div class="rec-exec"><b>How to execute: </b>${r.exec}</div>
+  </div>`
+).join('');
+
+// ===== CHARTS =====
+let chartMonthly, chartYoy, chartTips, chartTrajectory;
+
+function renderTrendCharts() {
+  if(chartMonthly) chartMonthly.destroy();
+  if(chartYoy) chartYoy.destroy();
+
+  const ctx1 = document.getElementById('chart-monthly').getContext('2d');
+  chartMonthly = new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels: monthly.map(m=>m.m),
+      datasets: [
+        { label:'2023', data:monthly.map(m=>m.y23||null), borderColor:'#b8d9a8', backgroundColor:'transparent', borderWidth:2, borderDash:[4,4], pointRadius:3, tension:0.3, spanGaps:false },
+        { label:'2024', data:monthly.map(m=>m.y24), borderColor:'#7ab369', backgroundColor:'transparent', borderWidth:2, pointRadius:3, tension:0.3 },
+        { label:'2025', data:monthly.map(m=>m.y25), borderColor:'#2d4a27', backgroundColor:'transparent', borderWidth:2.5, pointRadius:3, tension:0.3 },
+      ]
+    },
+    options: {
+      responsive:true, plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'$'+ctx.parsed.y.toLocaleString()}}},
+      scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()},grid:{color:'#f0ece6'}},x:{grid:{display:false}}}
+    }
+  });
+
+  const ctx2 = document.getElementById('chart-yoy').getContext('2d');
+  chartYoy = new Chart(ctx2, {
+    type:'bar',
+    data: {
+      labels:['2023','2024','2025'],
+      datasets:[{data:[2896,3654,4015],backgroundColor:'#4f7942',borderRadius:4}]
+    },
+    options: {
+      responsive:true, plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'$'+ctx.parsed.y.toLocaleString()}}},
+      scales:{y:{ticks:{callback:v=>'$'+v},grid:{color:'#f0ece6'}},x:{grid:{display:false}}}
+    }
+  });
+}
+
+function renderTipChart() {
+  if(chartTips) chartTips.destroy();
+  const ctx = document.getElementById('chart-tips').getContext('2d');
+  chartTips = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels:['2023','2024','2025'],
+      datasets:[{data:[1949,2867,3547],backgroundColor:'#4f7942',borderRadius:4}]
+    },
+    options:{
+      responsive:true, plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'$'+ctx.parsed.y.toLocaleString()}}},
+      scales:{y:{ticks:{callback:v=>'$'+v},grid:{color:'#f0ece6'}},x:{grid:{display:false}}}
+    }
+  });
+}
+
+function renderTrajectoryChart() {
+  if(chartTrajectory) chartTrajectory.destroy();
+  const ctx = document.getElementById('chart-trajectory').getContext('2d');
+  chartTrajectory = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels:['2023 (8mo)','2024','2025','2026 Base','2026 Upside'],
+      datasets:[{data:[23169,43847,48182,54500,60000],backgroundColor:['#4f7942','#4f7942','#4f7942','#7ab369','#b8d9a8'],borderRadius:4}]
+    },
+    options:{
+      responsive:true, plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'$'+ctx.parsed.y.toLocaleString()}}},
+      scales:{y:{ticks:{callback:v=>'$'+(v/1000).toFixed(0)+'k'},grid:{color:'#f0ece6'}},x:{grid:{display:false}}}
+    }
+  });
+}
+
+// Init
+renderTabs();
+</script>
+</body>
+</html>
