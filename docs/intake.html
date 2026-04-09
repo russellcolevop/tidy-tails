@@ -747,7 +747,7 @@
     const footer = document.getElementById('footer');
 
     // Initialize Supabase client
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Event listeners for online/offline
     window.addEventListener('online', () => {
@@ -1188,7 +1188,7 @@
         }
 
         // Create client
-        const { data: clientData, error: clientError } = await supabase
+        const { data: clientData, error: clientError } = await sb
           .from('clients')
           .insert([{
             first_name: formData.client.first_name,
@@ -1221,7 +1221,7 @@
           vaccination_status: pet.vaccination_status || null
         }));
 
-        const { error: petsError } = await supabase
+        const { error: petsError } = await sb
           .from('pets')
           .insert(petsToInsert);
 

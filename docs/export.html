@@ -519,7 +519,7 @@
         const SUPABASE_URL = 'https://pgkwovokciaqnbhpttba.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBna3dvdm9rY2lhcW5iaHB0dGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NjU4ODUsImV4cCI6MjA5MTM0MTg4NX0.5ZQHpyH17dcCumR-wZdJMuo7BahBXqKmMzA-3U-U504';
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // DOM Elements
         const fromDateInput = document.getElementById('fromDate');
@@ -606,7 +606,7 @@
                 showStatus('Fetching appointment data from Supabase...');
 
                 // Fetch appointments with status='completed' in the date range
-                const { data: appointments, error: appointmentError } = await supabase
+                const { data: appointments, error: appointmentError } = await sb
                     .from('appointments')
                     .select('*')
                     .gte('date', fromDate)
@@ -624,12 +624,12 @@
                 showStatus(`Found ${appointments.length} appointments. Fetching client and pet details...`);
 
                 // Fetch all clients and pets
-                const { data: clients, error: clientError } = await supabase
+                const { data: clients, error: clientError } = await sb
                     .from('clients')
                     .select('*');
                 if (clientError) throw clientError;
 
-                const { data: pets, error: petError } = await supabase
+                const { data: pets, error: petError } = await sb
                     .from('pets')
                     .select('*');
                 if (petError) throw petError;

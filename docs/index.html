@@ -302,7 +302,7 @@ let state = {
 // Supabase configuration
 const SUPABASE_URL = 'https://pgkwovokciaqnbhpttba.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBna3dvdm9rY2lhcW5iaHB0dGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NjU4ODUsImV4cCI6MjA5MTM0MTg4NX0.5ZQHpyH17dcCumR-wZdJMuo7BahBXqKmMzA-3U-U504';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Generate a realistic demo schedule
 function generateDemoSchedule() {
@@ -467,7 +467,7 @@ async function saveCompletion() {
   };
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await sb
       .from('appointments')
       .insert([record]);
 
@@ -1530,7 +1530,7 @@ function saveTemp(clientId, petName) {
 async function loadBookingRequests() {
   if (state.bookingRequestsLoaded) return;
   try {
-    const { data, error } = await supabase
+    const { data, error } = await sb
       .from('booking_requests')
       .select('*')
       .eq('status', 'pending')
@@ -1691,7 +1691,7 @@ function closeDenyModal() {
 async function approveBookingRequest(requestId) {
   try {
     // Update booking request status to approved
-    const { error: updateError } = await supabase
+    const { error: updateError } = await sb
       .from('booking_requests')
       .update({ status: 'approved', reviewed_at: new Date().toISOString() })
       .eq('id', requestId);
@@ -1705,7 +1705,7 @@ async function approveBookingRequest(requestId) {
     // Get the request details to create an appointment
     const req = state.bookingRequests.find(r => r.id === requestId);
     if (req) {
-      const { error: createError } = await supabase
+      const { error: createError } = await sb
         .from('appointments')
         .insert({
           client_id: req.client_id,
@@ -1738,7 +1738,7 @@ async function confirmHold() {
   if (!requestId) return;
 
   try {
-    const { error } = await supabase
+    const { error } = await sb
       .from('booking_requests')
       .update({ admin_notes: notes, reviewed_at: new Date().toISOString() })
       .eq('id', requestId);
@@ -1775,7 +1775,7 @@ async function confirmDeny() {
     const clientName = client ? client.name : 'Client';
     const clientPhone = client ? (client.phones ? client.phones[0] : 'N/A') : 'N/A';
 
-    const { error } = await supabase
+    const { error } = await sb
       .from('booking_requests')
       .update({ status: 'denied', denial_reason: reason, reviewed_at: new Date().toISOString() })
       .eq('id', requestId);

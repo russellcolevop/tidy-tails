@@ -1046,7 +1046,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // Initialize Supabase
-        const supabase = supabase.createClient(
+        const sb = window.supabase.createClient(
             'https://pgkwovokciaqnbhpttba.supabase.co',
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBna3dvdm9rY2lhcW5iaHB0dGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NjU4ODUsImV4cCI6MjA5MTM0MTg4NX0.5ZQHpyH17dcCumR-wZdJMuo7BahBXqKmMzA-3U-U504'
         );
@@ -1122,7 +1122,7 @@
                 this.state.phone = phone;
 
                 // Check if account exists
-                const { data, error } = await supabase
+                const { data, error } = await sb
                     .from('client_accounts')
                     .select('*')
                     .eq('phone', phone)
@@ -1164,7 +1164,7 @@
                     return;
                 }
 
-                const { data, error } = await supabase
+                const { data, error } = await sb
                     .from('client_accounts')
                     .select('*')
                     .eq('phone', this.state.phone)
@@ -1202,7 +1202,7 @@
                 }
 
                 // Check if phone already exists in clients table
-                const { data: clientData } = await supabase
+                const { data: clientData } = await sb
                     .from('clients')
                     .select('id')
                     .eq('phone', this.state.phone)
@@ -1211,7 +1211,7 @@
                 let clientId = clientData?.id;
 
                 // Create client_accounts entry
-                const { data, error } = await supabase
+                const { data, error } = await sb
                     .from('client_accounts')
                     .insert({
                         phone: this.state.phone,
@@ -1356,7 +1356,7 @@
                     return;
                 }
 
-                const { data, error } = await supabase
+                const { data, error } = await sb
                     .from('pets')
                     .insert({
                         client_id: this.state.clientId,
@@ -1420,7 +1420,7 @@
                     secondary_contacts: this.state.clientAccount?.secondary_contacts || []
                 };
 
-                const { error } = await supabase
+                const { error } = await sb
                     .from('client_accounts')
                     .update(updates)
                     .eq('id', this.state.clientAccount.id);
@@ -1440,7 +1440,7 @@
 
             // PET LOADING
             async loadPets() {
-                const { data, error } = await supabase
+                const { data, error } = await sb
                     .from('pets')
                     .select('*')
                     .eq('client_id', this.state.clientId);
@@ -1577,7 +1577,7 @@
                     dates.push(date);
                 }
 
-                const { data: appointments } = await supabase
+                const { data: appointments } = await sb
                     .from('appointments')
                     .select('date')
                     .gte('date', dates[0].toISOString().split('T')[0])
@@ -1702,7 +1702,7 @@
             },
 
             async submitBooking() {
-                const { error } = await supabase
+                const { error } = await sb
                     .from('booking_requests')
                     .insert({
                         client_id: this.state.clientId,
@@ -1729,13 +1729,13 @@
 
             // APPOINTMENTS SCREEN
             async loadAppointments() {
-                const { data: bookings, error: bookingsError } = await supabase
+                const { data: bookings, error: bookingsError } = await sb
                     .from('booking_requests')
                     .select('*, pets(name)')
                     .eq('client_id', this.state.clientId)
                     .order('requested_date', { ascending: false });
 
-                const { data: appointments, error: appointmentsError } = await supabase
+                const { data: appointments, error: appointmentsError } = await sb
                     .from('appointments')
                     .select('*, pets(name)')
                     .eq('client_id', this.state.clientId)
