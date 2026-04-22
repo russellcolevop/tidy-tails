@@ -8,9 +8,9 @@ A business management platform for **Samantha**, the owner of a professional dog
 
 ## Current state
 
-- **v1 (live, in Samantha's daily use)** — static HTML site deployed via GitHub Pages at `https://russell-labs.github.io/tidy-tails/home.html`. Multiple modules: `home`, `client`, `intake`, `report`, `export`. Data is hardcoded / file-based.
-- **v2 (in design, not yet built)** — Supabase-backed rebuild. Russell has a stack of design cards ready to convert into a Supabase schema + app scaffold. Planned stack: Next.js 14 + Supabase + Stripe + Anthropic API (same as childcareos) — re-confirm before coding.
-- **⚠️ Stale-doc flag (2026-04-22):** a live Supabase project (`pgkwovokciaqnbhpttba`) exists and is populated with real operational data — 268 clients, 352 pets, 730 appointments, plus booking_requests and automations_log tables. That contradicts the "v2 not yet built" framing above. Either v2 is partially live, or something else is reading/writing that DB. Russell should resolve this framing — see "Live data" below for the ground truth.
+- **v1 (live, in Samantha's daily use)** — static HTML site deployed via GitHub Pages at `https://russell-labs.github.io/tidy-tails/home.html`. Multiple modules: `home`, `client`, `intake`, `report`, `export`. **Not file-based** — each HTML module loads `@supabase/supabase-js` via CDN and talks directly to the live Supabase project (see "Live data"). The Supabase URL and anon key are hard-coded in the HTML. A Twilio-backed `send-sms` Supabase edge function is invoked from `client.html` for text notifications.
+- **v2 (aspirational, not started)** — a Next.js 14 + Supabase + Stripe + Anthropic-API rebuild Russell has sketched on design cards. No code exists yet. Don't assume any v2 work is partially landed — the "v2" label has historically been misleading because v1 is already Supabase-backed.
+- **Architecture reality check:** v1 is a static-HTML + Supabase-js hybrid, not a static brochure site. Treat every HTML module as a production database client. Changes to query shape, table names, or RLS policies are shipping to Samantha the moment they land in `main` (GitHub Pages auto-deploys).
 
 ## Live data
 
@@ -26,8 +26,9 @@ Tidy Tails has a live Supabase backend that is actively populated.
   - `client_accounts` — 0 rows
   - `automations_log` — 0 rows
   - View: `client_overview` (has a SECURITY DEFINER warning in the security advisor — worth fixing eventually)
-- **What writes to it**: unclear as of 2026-04-22 — the v1 static HTML doesn't appear to reference Supabase. Russell should clarify whether a separate app, automation, or partially-built v2 owns this data. Until then, **treat these tables as load-bearing for Samantha's business** and do not drop, rename, or alter columns without an explicit plan.
-- **Credentials**: the Supabase URL and anon key for this project are not yet documented in this repo. They should be referenced via env vars, not hard-coded. The DB password was rotated on 2026-04-22 during the backup — any deployed service that used the old direct-postgres password is now broken. The anon key was not changed.
+- **What writes to it**: the v1 HTML modules themselves. `intake.html`, `client.html`, `index.html`, and the copies under `docs/` each import `@supabase/supabase-js` from a CDN, instantiate a client with `window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)`, and read/write the public tables directly from the browser. `client.html` also calls a `send-sms` Supabase edge function (Twilio-backed, set up 2026-04). Treat these tables as load-bearing for Samantha's business — do not drop, rename, or alter columns without a coordinated HTML-side change.
+- **Credentials**: the Supabase URL and anon key are currently hard-coded in the HTML modules. This is acceptable with Supabase-js *only* if Row Level Security is enabled and scoped correctly on every public table — the anon key is meant to be public, but the DB is only as safe as the RLS policies. **TODO: confirm RLS is on for `clients`, `pets`, `appointments`, `booking_requests`, `client_accounts`, `automations_log`.** The DB password was rotated on 2026-04-22 during the backup — any deployed service that used the old direct-postgres password is now broken. The anon key was not changed, so the HTML modules still work.
+- **Edge functions**: `send-sms` (Twilio) — called from `client.html` to notify Samantha / clients. Credentials live in Supabase function secrets, not in this repo.
 - **Logical backup**: the most recent full dump (schema + data + per-table CSVs) lives OUTSIDE this repo at `~/venture-ops/backups/tidy-tails/` (on Russell's Mac). It's a one-shot insurance copy via session pooler, not a replacement for the live DB. Re-run with `venture-ops/dump_supabase.py` if a fresh snapshot is needed. Never commit this backup into the repo.
 
 ## How to be useful here
@@ -45,8 +46,8 @@ Tidy Tails has a live Supabase backend that is actively populated.
 
 ## What's explicitly not here
 
-- Secrets, API keys, tokens. Never.
-- Samantha's real customer data. The live v1 is static HTML with non-sensitive seed data; keep it that way until v2's Supabase is built with proper row-level security.
+- Secrets, API keys, tokens. Never. (The Supabase anon key that appears in the HTML is *not* a secret — it's the public client key and is safe to ship if RLS is on. Do not commit the `service_role` key or the Twilio token.)
+- Samantha's real customer data. The logical backup lives OUTSIDE this repo in `~/venture-ops/backups/tidy-tails/` — never commit that dump into the repo.
 
 ## History
 
