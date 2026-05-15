@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/* Tidy Tails v2 design tokens. Light, calm, high-trust — an operator cockpit,
+   not a marketing surface. Safety signals (allergy red, vaccine amber) are
+   first-class colors, not afterthoughts. */
+@theme {
+  --color-canvas: #f4f3f7;
+  --color-surface: #ffffff;
+  --color-ink: #1c1b22;
+  --color-ink-soft: #5c5a68;
+  --color-ink-faint: #8d8b99;
+  --color-line: #e7e5ee;
+
+  --color-brand: #6d28d9;
+  --color-brand-ink: #4c1d95;
+  --color-brand-soft: #f1ecfd;
+
+  --color-danger: #be123c;
+  --color-danger-ink: #9f1239;
+  --color-danger-soft: #fff1f3;
+
+  --color-warn: #b45309;
+  --color-warn-soft: #fdf3e2;
+
+  --color-ok: #15803d;
+  --color-ok-soft: #ecfaef;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
+}
+
+/* iOS safe-area helpers for the fixed bottom navigation */
+.pad-bottom-nav {
+  padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));
+}
+.nav-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+button {
+  cursor: pointer;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
