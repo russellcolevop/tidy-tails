@@ -46,3 +46,22 @@
 - Wait for full V2_DESIGN_LOCK before any v2 code (rejected: the read-only scaffold has no DB risk and unblocks design feedback from Samantha now).
 - Scaffold with live writes wired but disabled in UI (rejected: a dormant write path is still a footgun; read-only by construction is safer).
 
+## [2026-05-15] v2 Ship 2.2 RLS migration — flag-day cutover, no anon bridge
+
+**Decision:** The Ship 2.2 RLS-hardening migration (add `groomer_id`, scope all policies to `auth.uid()`, drop the `client_overview` view) runs as a single flag-day cutover event — not early in the ship sequence. v1 stays fully live and code-unchanged on its current permissive policies until that moment. No temporary permissive anon bridge policies will be added to keep v1 alive past the migration. "Parallel run" is reinterpreted: a pre-cutover rehearsal (Samantha tests v2 on staging while v1 stays source of truth) and a post-cutover watch week (v2 is source of truth, v1 is archived reference, not an active parallel-write surface). Consequence: the migration becomes the last step of v2, after the feature ships; the design-lock §10 ship order is re-derived accordingly. Resolves the open decision flagged in design-lock spec §10 and `HANDOFF.md`. Plan: `_reports/2026-05-15-v2-ship-2.2-auth-rls-plan.md`.
+
+**Rationale:** A bridge policy keeps the exact R-1 hole — anon read/write via the public key — open through the parallel-run week, defeating the point of the ship. Flag-day cutover closes R-1 decisively in one event and keeps the rollback surface simple (one revertible migration). v1 stays a clean, untouched fallback right up to cutover; if v2 fails in the watch week, the rehearsed rollback migration restores the permissive state and v1 works again within minutes.
+
+**Alternatives considered:**
+- SELECT-only bridge during the parallel run (rejected by Russell: v1 would go read-only for the week *and* R-1's read-hole would stay open — complexity for little gain).
+- Full permissive anon bridge (rejected: leaves R-1 entirely open during the parallel run).
+
+## [2026-05-15] v2 Ship 2.2 migration scope — security only (PROPOSED, pending ratification)
+
+**Decision (proposed):** The Ship 2.2 migration is narrowed to security only — `groomer_id` columns, the RLS policy rewrite, and dropping `client_overview`. Feature schema (the `vaccinations` table, `clients`/`pets` enrichment columns, optional `audit_events`) moves to the ships that build those features (2.3+). This supersedes design-lock spec §3.6's "single bundled migration" per spec §0. Status: proposed in `_reports/2026-05-15-v2-ship-2.2-auth-rls-plan.md` §1; Russell ratifies in plan review.
+
+**Rationale:** A security migration with a small, well-understood surface has a far simpler and safer rollback than one also carrying feature columns and a new table. Both migrations still land before cutover; splitting them shrinks the rollback surface of the security-critical one.
+
+**Alternatives considered:**
+- Single bundled migration per spec §3.6 (not rejected — left to Russell; if preferred, it overrides this entry).
+
