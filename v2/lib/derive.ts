@@ -22,6 +22,46 @@ export function daysSinceLastVisit(appointments: Appointment[]): number | null {
   return -daysFromToday(last.date);
 }
 
+/**
+ * The service a pet usually gets — the most frequently booked one. A frequency
+ * tie is broken toward the service on the most recent appointment, so "usual"
+ * tracks what Sam is doing lately. Null when there is no history.
+ */
+export function usualService(appointments: Appointment[]): string | null {
+  if (appointments.length === 0) return null;
+
+  const counts = new Map<string, number>();
+  for (const a of appointments) {
+    counts.set(a.service, (counts.get(a.service) ?? 0) + 1);
+  }
+  const max = Math.max(...counts.values());
+  const topServices = new Set(
+    [...counts].filter(([, n]) => n === max).map(([service]) => service),
+  );
+  if (topServices.size === 1) return [...topServices][0];
+
+  // Tie: pick the tied service seen on the most recent appointment.
+  for (const a of sortByDateDesc(appointments)) {
+    if (topServices.has(a.service)) return a.service;
+  }
+  return null; // unreachable — topServices is non-empty
+}
+
+/**
+ * The price a pet's groom usually costs — the median of past prices. Median,
+ * not average or most-recent, so a one-off high or low charge does not skew the
+ * figure Sam quotes on a call. Null when there is no history.
+ */
+export function usualPrice(appointments: Appointment[]): number | null {
+  if (appointments.length === 0) return null;
+
+  const prices = appointments.map((a) => a.price).sort((x, y) => x - y);
+  const mid = Math.floor(prices.length / 2);
+  return prices.length % 2 === 0
+    ? (prices[mid - 1] + prices[mid]) / 2
+    : prices[mid];
+}
+
 export type LapsedClient = {
   client: Client;
   pets: Pet[];

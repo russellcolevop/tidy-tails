@@ -1,43 +1,57 @@
-import { ClientSearch, type ClientSummary } from "@/components/ClientSearch";
+import { ClientSearch } from "@/components/ClientSearch";
+import type { HouseholdCardData } from "@/components/HouseholdCard";
 import { loadDataset } from "@/lib/data/repo";
-import { lastAppointment } from "@/lib/derive";
+import { lastAppointment, usualPrice, usualService } from "@/lib/derive";
 import { fullName } from "@/lib/format";
 
-// Render per request: the client list shows time-relative labels ("12 days
-// ago") that must be computed against the current date, not frozen at build.
+// Render per request: the cards show time-relative labels ("12 days ago") that
+// must be computed against the current date, not frozen at build.
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const { clients, pets, appointments } = await loadDataset();
 
-  const summaries: ClientSummary[] = [...clients]
-    .sort(
-      (a, b) =>
-        a.last_name.localeCompare(b.last_name) ||
-        a.first_name.localeCompare(b.first_name),
-    )
-    .map((c) => {
-      const ownPets = pets.filter((p) => p.client_id === c.id);
-      const last = lastAppointment(appointments.filter((a) => a.client_id === c.id));
-      return {
-        id: c.id,
-        name: fullName(c.first_name, c.last_name),
-        phone: c.phone,
-        petNames: ownPets.map((p) => p.name),
-        hasAllergy: ownPets.some((p) => p.allergies),
-        lastVisit: last?.date ?? null,
-      };
-    });
+  // Build one card per household. "Usual service / price" and "last visit" are
+  // derived from appointment history on read — no stored columns (PRD §6).
+  const households: HouseholdCardData[] = clients.map((client) => {
+    const clientAppointments = appointments.filter(
+      (a) => a.client_id === client.id,
+    );
+    const ownPets = pets.filter((p) => p.client_id === client.id);
+
+    return {
+      id: client.id,
+      firstName: client.first_name,
+      lastName: client.last_name,
+      name: fullName(client.first_name, client.last_name),
+      phone: client.phone,
+      lastVisit: lastAppointment(clientAppointments)?.date ?? null,
+      pets: ownPets.map((pet) => {
+        const petAppointments = clientAppointments.filter(
+          (a) => a.pet_id === pet.id,
+        );
+        return {
+          id: pet.id,
+          name: pet.name,
+          breed: pet.breed,
+          allergies: pet.allergies,
+          lastVisit: lastAppointment(petAppointments)?.date ?? null,
+          usualService: usualService(petAppointments),
+          usualPrice: usualPrice(petAppointments),
+        };
+      }),
+    };
+  });
 
   return (
     <main className="px-4 py-5">
       <header className="mb-4">
         <h1 className="text-xl font-bold text-ink">Tidy Tails</h1>
         <p className="text-sm text-ink-soft">
-          Find a client before they walk in.
+          Search a name, phone, or pet to pull up the right household.
         </p>
       </header>
-      <ClientSearch summaries={summaries} />
+      <ClientSearch households={households} />
     </main>
   );
 }

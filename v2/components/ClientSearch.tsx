@@ -1,42 +1,44 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
-import { digitsOnly, formatPhone, relativeDate } from "@/lib/format";
+import { searchHouseholds, type SearchHousehold } from "@/lib/search";
+import { HouseholdCard, type HouseholdCardData } from "./HouseholdCard";
 
-export type ClientSummary = {
-  id: string;
-  name: string;
-  phone: string;
-  petNames: string[];
-  hasAllergy: boolean;
-  lastVisit: string | null; // ISO date
-};
+// The Call/Text → Identify → Book wedge (PRD §1.1). Sam types one clue — a
+// phone number, an owner's first or last name, a pet name, or a partial/typo'd
+// fragment — and pulls up the matching households, ranked. Matching and
+// ranking live in lib/search.ts (pure, unit-tested); this component is the
+// search box and the result list.
 
-export function ClientSearch({ summaries }: { summaries: ClientSummary[] }) {
+export function ClientSearch({
+  households,
+}: {
+  households: HouseholdCardData[];
+}) {
   const [query, setQuery] = useState("");
 
-  const indexed = useMemo(
-    () =>
-      summaries.map((s) => ({
-        summary: s,
-        haystack: `${s.name} ${s.petNames.join(" ")}`.toLowerCase(),
-        digits: digitsOnly(s.phone),
-      })),
-    [summaries],
+  const byId = useMemo(
+    () => new Map(households.map((h) => [h.id, h])),
+    [households],
   );
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return summaries;
-    const qDigits = digitsOnly(q);
-    return indexed
-      .filter(
-        ({ haystack, digits }) =>
-          haystack.includes(q) || (qDigits.length > 0 && digits.includes(qDigits)),
-      )
-      .map((x) => x.summary);
-  }, [query, indexed, summaries]);
+  // The lean shape lib/search.ts matches against — just the searchable fields.
+  const searchIndex = useMemo<SearchHousehold[]>(
+    () =>
+      households.map((h) => ({
+        id: h.id,
+        firstName: h.firstName,
+        lastName: h.lastName,
+        phone: h.phone,
+        pets: h.pets.map((p) => ({ id: p.id, name: p.name })),
+      })),
+    [households],
+  );
+
+  const results = useMemo(
+    () => searchHouseholds(query, searchIndex),
+    [query, searchIndex],
+  );
 
   return (
     <div>
@@ -57,53 +59,35 @@ export function ClientSearch({ summaries }: { summaries: ClientSummary[] }) {
           enterKeyHint="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name, pet, or phone"
-          aria-label="Search clients"
+          placeholder="Search a name, phone, or pet"
+          aria-label="Search households by owner name, phone, or pet name"
           className="w-full rounded-xl border border-line bg-surface py-3 pl-11 pr-4 text-base text-ink placeholder:text-ink-faint"
         />
       </div>
 
       <p className="mt-3 px-1 text-xs text-ink-faint">
-        {results.length} {results.length === 1 ? "client" : "clients"}
+        {results.length} {results.length === 1 ? "household" : "households"}
         {query.trim() ? ` matching “${query.trim()}”` : ""}
       </p>
 
       {results.length === 0 ? (
         <p className="mt-8 text-center text-sm text-ink-soft">
-          No clients match that search.
+          No households match that search.
         </p>
       ) : (
-        <ul className="mt-1.5 flex flex-col gap-2">
-          {results.map((c) => (
-            <li key={c.id}>
-              <Link
-                href={`/clients/${c.id}`}
-                className="block rounded-xl border border-line bg-surface px-4 py-3 shadow-sm"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="truncate font-semibold text-ink">{c.name}</span>
-                  {c.hasAllergy ? (
-                    <span className="flex shrink-0 items-center gap-1 rounded-full bg-danger-soft px-2 py-0.5 text-xs font-semibold text-danger-ink">
-                      <span
-                        className="h-1.5 w-1.5 rounded-full bg-danger"
-                        aria-hidden="true"
-                      />
-                      Allergy
-                    </span>
-                  ) : null}
-                </div>
-                <p className="mt-0.5 truncate text-sm text-ink-soft">
-                  {formatPhone(c.phone)}
-                  {c.petNames.length > 0 ? ` · ${c.petNames.join(", ")}` : ""}
-                </p>
-                <p className="mt-0.5 text-xs text-ink-faint">
-                  {c.lastVisit
-                    ? `Last groom ${relativeDate(c.lastVisit)}`
-                    : "No visits recorded yet"}
-                </p>
-              </Link>
-            </li>
-          ))}
+        <ul className="mt-1.5 flex flex-col gap-2.5">
+          {results.map((result) => {
+            const household = byId.get(result.household.id);
+            if (!household) return null;
+            return (
+              <li key={result.household.id}>
+                <HouseholdCard
+                  household={household}
+                  matchedPetIds={result.matchedPetIds}
+                />
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

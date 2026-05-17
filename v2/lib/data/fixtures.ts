@@ -36,6 +36,11 @@ export const FIXTURE_CLIENTS: Client[] = [
   { id: "c18", first_name: "Russ", last_name: "Vandermeer", phone: "705-555-0120", alt_contact: null, email: "russ.v@example.com", notes: null, created_at: isoDaysAgo(380) },
   { id: "c19", first_name: "Renata", last_name: "Voss", phone: "705-555-0136", alt_contact: null, email: null, notes: "Two poodles.", created_at: isoDaysAgo(660) },
   { id: "c20", first_name: "Caleb", last_name: "Whitmore", phone: "705-555-0151", alt_contact: null, email: "caleb.w@example.com", notes: null, created_at: isoDaysAgo(580) },
+  // Marisol Park shares a surname with Aileen Park (c13) — owner-name
+  // disambiguation. Her Bella and Glen Okafor's Bella share a pet name —
+  // common-pet-name disambiguation (PRD §1.1).
+  { id: "c21", first_name: "Marisol", last_name: "Park", phone: "705-555-0133", alt_contact: null, email: "marisol.p@example.com", notes: null, created_at: isoDaysAgo(440) },
+  { id: "c22", first_name: "Glen", last_name: "Okafor", phone: "705-555-0155", alt_contact: null, email: null, notes: "Two dogs — Bella usually books with Rufus.", created_at: isoDaysAgo(520) },
 ];
 
 export const FIXTURE_PETS: Pet[] = [
@@ -62,6 +67,11 @@ export const FIXTURE_PETS: Pet[] = [
   { id: "p21", client_id: "c19", name: "Clementine", breed: "Standard Poodle", color: "Cream", sex: "F", date_of_birth: isoDaysAgo(1900), allergies: false, allergies_detail: null, grooming_notes: "Continental-adjacent pet trim. Owner is particular about topknot.", typical_fee: 110, created_at: isoDaysAgo(660) },
   { id: "p22", client_id: "c19", name: "Soda", breed: "Miniature Poodle", color: "Silver", sex: "M", date_of_birth: isoDaysAgo(1450), allergies: false, allergies_detail: null, grooming_notes: "Short sporting clip. Easy.", typical_fee: 82, created_at: isoDaysAgo(660) },
   { id: "p23", client_id: "c20", name: "Duke", breed: "German Shepherd", color: "Black & tan", sex: "M", date_of_birth: isoDaysAgo(2200), allergies: false, allergies_detail: null, grooming_notes: "De-shed and bath. Wary of strangers — let him settle first.", typical_fee: 92, created_at: isoDaysAgo(580) },
+  // Two dogs named "Bella" in different households — different breeds, and one
+  // has an allergy — so the search cards visibly disambiguate which Bella.
+  { id: "p24", client_id: "c21", name: "Bella", breed: "Havanese", color: "Cream", sex: "F", date_of_birth: isoDaysAgo(1020), allergies: false, allergies_detail: null, grooming_notes: "Soft full coat — scissor finish, keep the length.", typical_fee: 80, created_at: isoDaysAgo(440) },
+  { id: "p25", client_id: "c22", name: "Bella", breed: "Pomeranian", color: "Orange sable", sex: "F", date_of_birth: isoDaysAgo(1320), allergies: true, allergies_detail: "Reacts to scented shampoo — hypoallergenic line only, no finishing spritz.", grooming_notes: "Teddy-bear face trim. Never shave down.", typical_fee: 66, created_at: isoDaysAgo(520) },
+  { id: "p26", client_id: "c22", name: "Rufus", breed: "Bullmastiff", color: "Fawn", sex: "M", date_of_birth: isoDaysAgo(1750), allergies: false, allergies_detail: null, grooming_notes: "Large breed — book the long slot. Bath and de-shed.", typical_fee: 105, created_at: isoDaysAgo(520) },
 ];
 
 const SERVICES = [
@@ -97,6 +107,9 @@ const HISTORY: Array<[string, number, number, number]> = [
   ["p21", 9, 7, 42],
   ["p22", 9, 7, 42],
   ["p23", 5, 137, 63], // Caleb Whitmore — lapsed
+  ["p24", 5, 16, 49], // Marisol Park's Bella
+  ["p25", 6, 23, 56], // Glen Okafor's Bella
+  ["p26", 4, 30, 70], // Glen Okafor's Rufus
 ];
 
 function buildAppointments(): Appointment[] {
