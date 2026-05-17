@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import { signOut } from "@/lib/actions/auth";
 import { dataMode } from "@/lib/data/repo";
+import { getCurrentUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Settings" };
+
+// Reads the signed-in operator's identity per request — never prerender or
+// cache it. (The session check also makes this route inherently dynamic.)
+export const dynamic = "force-dynamic";
 
 const SMS_TEMPLATE =
   "Hi [first name], just a reminder that [pet name] has a grooming appointment coming up. See you soon! — Samantha";
@@ -35,16 +40,16 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
   const mode = dataMode();
+  const user = await getCurrentUser();
 
   return (
     <main className="px-4 py-5">
       <h1 className="text-xl font-bold text-ink">Settings</h1>
 
       <Card title="Account">
-        <Row label="Operator" value="Samantha" />
-        <Row label="Session" value="Signed in (placeholder)" />
+        <Row label="Signed in as" value={user?.email ?? "—"} />
       </Card>
 
       <Card title="Business">

@@ -1,23 +1,13 @@
-// Next.js 16 Proxy (the renamed `middleware`). Placeholder auth gate for
-// Ship 2.1: redirects unauthenticated requests to /login.
+// Next.js 16 Proxy (the renamed `middleware`).
 //
-// Ship 2.2 swaps the cookie check for a real Supabase Auth session check.
+// Ship 2.2a: real Supabase Auth. Every app route runs through updateSession,
+// which refreshes the SSR session and gates unauthenticated access to /login.
 
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { SESSION_COOKIE } from "@/lib/session";
+import { updateSession } from "@/lib/supabase/proxy";
 
-export function proxy(request: NextRequest) {
-  const authed = request.cookies.has(SESSION_COOKIE);
-  const isLogin = request.nextUrl.pathname === "/login";
-
-  if (!authed && !isLogin) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-  if (authed && isLogin) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-  return NextResponse.next();
+export async function proxy(request: NextRequest) {
+  return updateSession(request);
 }
 
 export const config = {
