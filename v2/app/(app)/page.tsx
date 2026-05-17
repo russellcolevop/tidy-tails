@@ -1,6 +1,7 @@
+import { AddHousehold } from "@/components/AddHousehold";
 import { ClientSearch } from "@/components/ClientSearch";
 import type { HouseholdCardData } from "@/components/HouseholdCard";
-import { loadDataset } from "@/lib/data/repo";
+import { dataMode, loadDataset } from "@/lib/data/repo";
 import { lastAppointment, usualPrice, usualService } from "@/lib/derive";
 import { fullName } from "@/lib/format";
 
@@ -51,6 +52,9 @@ export default async function HomePage() {
           Search a name, phone, or pet to pull up the right household.
         </p>
       </header>
+      <div className="mb-4">
+        <AddHousehold mode={dataMode()} />
+      </div>
       <ClientSearch households={households} />
     </main>
   );
