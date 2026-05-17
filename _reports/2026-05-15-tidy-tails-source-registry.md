@@ -22,7 +22,7 @@ Every source in the reconciliation chain from contact-card photos to live Supaba
 | **Access** | Supabase MCP (execute_sql) |
 | **Privacy** | HIGH — real customer data, Supabase anon key in v1 HTML |
 | **Source-of-truth for** | canonical row IDs (UUIDs), appointment counts, RLS state |
-| **Current state** | 131 clients / 181 pets / 730 appointments — confirmed post-Phase-2-COMMIT 2026-05-16 (was 268 / 352 / 730 pre-Phase-2) |
+| **Current state** | 137 clients / 188 pets / 730 appointments — confirmed post-Phase-3-COMMIT 2026-05-17 (was 131 / 181 / 730 post-Phase-2; was 268 / 352 / 730 pre-Phase-2) |
 | **Feeds into** | Phase 1 UPDATE targets; Phase 2 dedup plan; Phase 3 INSERTs; post-run verification queries |
 | **Notes** | Do not run multi-statement queries in one MCP call — only the last result is returned. Use UNION ALL for multi-table counts. |
 

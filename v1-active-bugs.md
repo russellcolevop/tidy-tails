@@ -61,23 +61,26 @@ Rolling list of open findings. Sister to `v1-final-state-spec.md`. Severity: S1 
 
 ## B4 — Client roster not fully canonical (partial contact-card reconciliation)
 
-**Status:** In progress (Phase 2 closed; Phase 3 unblocked; ~189 cards still queued; Landry/Laundry still open)
+**Status:** In progress (Phases 1, 2, 3 closed; Phase 3.5 planning done, not executed; Korrie/Gavi + Landry/Laundry holdouts open; ~189 cards still queued)
 **Severity:** S2 (Medium)
-**Source:** _reports/2026-05-13-card-batch-1.md, _reports/2026-05-15-tidy-tails-source-registry.md, _reports/2026-05-16-phase-2-execution-report.md
+**Source:** _reports/2026-05-13-card-batch-1.md, _reports/2026-05-15-tidy-tails-source-registry.md, _reports/2026-05-16-phase-2-execution-report.md, _reports/2026-05-17-phase-3-execution-report.md
 
-**Description:** 79 of ~268+ contact cards have been processed in Workstream B. The remaining ~189+ cards may contain name corrections, phone corrections, allergy flags, breed corrections, or deceased pet flags not yet reflected in the database. The 2026-04-09 double-import duplicates are now mostly cleared.
+**Description:** 79 of ~268+ contact cards have been processed in Workstream B. The remaining ~189+ cards may contain name corrections, phone corrections, allergy flags, breed corrections, or deceased pet flags not yet reflected in the database. The 2026-04-09 double-import duplicates are cleared (Phase 2). The 6 confirmed net-new clients + 7 pets from batch 1 are now inserted (Phase 3). Two known reconciliation holdouts remain: Landry/Laundry phone group and the Korrie Silver / Gavi within-client duplicate.
 
 **Expected:** `clients` is the canonical roster — every row has a correct name, correct phone, and correct pet associations.
-**Actual:** Some rows have surname-only first names or incorrect pet name spellings (residual on the unprocessed ~189 cards). Three Landry/Laundry duplicate rows remain at phone 705-796-0620 pending Sam's Cash vs Charlotte decision. Otherwise, every non-Landry phone group is now a singleton.
+**Actual:** Some rows have surname-only first names or incorrect pet name spellings (residual on the unprocessed ~189 cards). Landry/Laundry 4 rows remain at 705-796-0620. Korrie Silver row at 647-300-7952 has two within-client Gavi pet duplicates (Medium Mix + Yorkie Mix, both `allergies = false`) — Sam's "no chicken, no grain" flag is not yet applied. Otherwise, every non-Landry duplicate phone group is a singleton.
 
 **Progress:**
 
 - **Phase 1 SQL executed 2026-05-15.** 29 UPDATEs (name fixes, phone corrections, pet fixes, allergy flags, deceased pet flags). Execution report at `_reports/2026-05-15-phase-1-execution-report.md`.
 - **Phase 2 SQL COMMITTED 2026-05-16.** 137 ghost client rows + 171 ghost pet rows deleted; 38 appointments re-pointed to canonical clients; all 730 appointments preserved. Live state went 268/352/730 → 131/181/730. Every non-Landry duplicate phone group is now a singleton (0 remaining). All 8 pre-write gates and 7 post-write invariants passed. Execution report at `_reports/2026-05-16-phase-2-execution-report.md`. Pre-commit backup at `_private/backups/2026-05-16-phase-2-precommit/`.
-- **Phase 3** (7 new client INSERTs + 8 new pet INSERTs) is now unblocked.
-- **Phase 4** (Codex enrichment: typical_fee, color, sex, special_notes) queued after Phase 3.
+- **Phase 3 SQL COMMITTED 2026-05-17.** 6 new clients + 7 new pets inserted (Mary Anca/Whiskey, Nancy Cauchi/Ruby, Gardy/Coco, Ashley Nichols/Kahlúa, Mary Nichols/Merlyn+Vader, Christina Kitchen/Winston). Korrie Silver / Gavi held out by G5 rollback-test catch. Live state went 131/181/730 → 137/188/730. All 7 pre-write gates (G1-G6 with G5 split into G5a + G5b) and 7 post-write invariants passed. Execution report at `_reports/2026-05-17-phase-3-execution-report.md`. Pre-commit backup at `_private/backups/2026-05-17-phase-3-precommit/`.
+- **Phase 3.5** (historical appointment backfills: Whiskey×3, Kiwi×2, plus deferred date-ambiguous rows) — planning at `_reports/2026-05-16-phase-3.5-appointment-backfills-plan.md`. Now unblocked by Phase 3.
+- **Phase 4** (Codex enrichment: typical_fee, color, sex, special_notes) queued after Phase 3.5.
 - **Remaining contact-card batches** (~189 cards 80-268+) still queued in Workstream B.
-- **Landry/Laundry follow-up patch** waiting on Sam's Cash vs Charlotte decision before that 4-row cluster can be cleaned.
+- **Holdout patches needed:**
+  - **Korrie Silver / Gavi**: phone format reconciliation, within-client Gavi pet dedup, then UPDATE allergies + allergies_detail. Existing client_id `56f4385b-b103-4aab-86a3-f18219d7aabe` at phone 647-300-7952 with 8 appointments. Pending Sam input on canonical phone format and Gavi identity.
+  - **Landry/Laundry (705-796-0620)** waiting on Sam's Cash vs Charlotte decision before that 4-row cluster can be cleaned.
 
 **Milestone:** CONTACT_CARD_ARCHIVE_RECONCILED
 

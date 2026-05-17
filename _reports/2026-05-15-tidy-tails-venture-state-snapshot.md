@@ -1,8 +1,8 @@
 ---
-when: 2026-05-15 (updated 2026-05-16 after Phase 2 COMMIT)
+when: 2026-05-15 (updated 2026-05-17 after Phase 3 INSERTs COMMIT)
 who: Cowork
 purpose: Current venture state snapshot for KoyaOS ingestion. Covers live product, database, reconciliation progress, open risks, and pending execution gates. Read alongside CLAUDE.md, HANDOFF.md, and the source registry.
-status: current as of 2026-05-16 (post-Phase-2 dedup COMMIT)
+status: current as of 2026-05-17 (post-Phase-3 INSERTs COMMIT)
 venture: tidy-tails
 supabase_project: pgkwovokciaqnbhpttba
 ---
@@ -29,15 +29,19 @@ Samantha runs her full grooming business on v1: booking, intake, client lookup, 
 
 | Table | Count | Source |
 |---|---|---|
-| clients | 131 | Post-Phase-2 COMMIT live (2026-05-16). Was 268 pre-Phase-2. |
-| pets | 181 | Post-Phase-2 COMMIT live (2026-05-16). Was 352 pre-Phase-2. |
-| appointments | 730 | Unchanged through Phases 1 and 2 (load-bearing invariant). |
+| clients | 137 | Post-Phase-3 COMMIT live (2026-05-17). Was 131 pre-Phase-3, 268 pre-Phase-2. |
+| pets | 188 | Post-Phase-3 COMMIT live (2026-05-17). Was 181 pre-Phase-3, 352 pre-Phase-2. |
+| appointments | 730 | Unchanged through Phases 1, 2, and 3 (load-bearing invariant). |
 
 The original 268 clients were bulk-imported from Excel in a 2-minute window on 2026-04-09 (21:26–21:28). The double-import created 115 duplicate phone groups; Phase 1B's Backway phone normalization consolidated this to 114 groups (101 two-row, 13 four-row = 140 ghost rows in the post-Phase-1 baseline).
 
-**Phase 2 COMMITTED 2026-05-16.** 137 ghost client rows + 171 ghost pet rows removed (137 + 3 Landry ghosts retained); 38 appointments re-pointed from ghost client_ids to canonical client_ids; all 730 appointments preserved. Post-COMMIT verification confirms 0 remaining duplicate phone groups outside Landry/Laundry, and 0 orphan appointment FKs. Execution report: `_reports/2026-05-16-phase-2-execution-report.md`.
+**Phase 2 COMMITTED 2026-05-16.** 137 ghost client rows + 171 ghost pet rows removed (137 + 3 Landry ghosts retained); 38 appointments re-pointed from ghost client_ids to canonical client_ids; all 730 appointments preserved. Post-COMMIT verification confirmed 0 remaining duplicate phone groups outside Landry/Laundry, and 0 orphan appointment FKs. Execution report: `_reports/2026-05-16-phase-2-execution-report.md`.
 
-**Landry/Laundry (705-796-0620) — 4 rows still present, deliberately excluded by Phase 2.** Sam needs to clarify Cash vs Charlotte before a follow-up patch can clean this group.
+**Phase 3 COMMITTED 2026-05-17.** 6 new clients (Mary Anca, Nancy Cauchi, Gardy, Ashley Nichols, Mary Nichols, Christina Kitchen) + 7 new pets (Whiskey, Ruby, Coco, Kahlúa, Merlyn, Vader, Winston) inserted. All 730 appointments preserved. Korrie Silver / Gavi held out: G5 rollback test caught an existing same-person row at phone `647-300-7952` with two within-client Gavi pet duplicates that need separate reconciliation. Execution report: `_reports/2026-05-17-phase-3-execution-report.md`.
+
+**Landry/Laundry (705-796-0620) — 4 rows still present, deliberately excluded by Phases 1, 2, and 3.** Sam needs to clarify Cash vs Charlotte before a follow-up patch can clean this group.
+
+**Korrie Silver / Gavi — held out by Phase 3 G5 catch.** Existing row at `647-300-7952` (client_id `56f4385b-b103-4aab-86a3-f18219d7aabe`) carries 8 appointments and two Gavi pet rows that need within-client dedup. Reconciliation pending Sam input on canonical phone format and Gavi identity. See `_reports/2026-05-16-phase-3-rollback-test-outcome.md`.
 
 **Financial alignment:** Ledger = 731 rows / $57,881.25 gross. Supabase = 730 appointments / $57,821.25 gross. Delta = 1 appointment: Russell Cole / Kiwi, 2024-06-06, $60. Ledger and database are effectively aligned.
 
@@ -85,8 +89,19 @@ GitHub Pages auto-deploys on merge to `main`. Any query-shape or table-name chan
 - Scope executed: 137 ghost client rows + 171 ghost pet rows deleted, 38 appointments re-pointed to canonical client_ids. 105 SAFE groups (113 ghosts) + 8 SPLIT_APPT groups (24 ghosts). Landry/Laundry (4 rows) deliberately excluded.
 - Post-run: 131 clients, 181 pets, 730 appointments. 0 remaining duplicate phone groups outside Landry. 0 orphan appointment FKs. All gates and invariants passed.
 
-**Phase 3 — New client INSERTs**
-- Status: not written. Unblocked by Phase 2 COMMIT.
+**Phase 3 — New client + pet INSERTs**
+- SQL: `_reports/2026-05-16-phase-3-inserts.sql` (set-based, temp-table-driven, 7 pre-write gates G1, G2, G3, G4, G5a, G5b, G6 + 7 post-write invariants I1-I7, default ROLLBACK)
+- Plan: `_reports/2026-05-16-phase-3-insert-plan.md`
+- Rollback-test outcome: `_reports/2026-05-16-phase-3-rollback-test-outcome.md` (documents the G5 catch on Korrie Silver and the resulting holdout decision)
+- Execution report: `_reports/2026-05-17-phase-3-execution-report.md`
+- **Status: COMMITTED 2026-05-17 — verified clean**
+- Scope executed: 6 client INSERTs + 7 pet INSERTs (Korrie Silver client + Gavi pet held out per the rollback-test G5 catch).
+- Post-run: 137 clients, 188 pets, 730 appointments. Landry/Laundry 4 rows untouched. Korrie holdout 1 row untouched. Dependent tables 0/0/0. 0 orphan appointment FKs. All gates and invariants passed.
+
+**Phase 3.5 — Historical appointment backfills (planning only; not executed)**
+- Plan: `_reports/2026-05-16-phase-3.5-appointment-backfills-plan.md`
+- Status: planning only; depends on Phase 3 (now COMMITTED) for FK targets and a Sam-readback for date-ambiguous entries before SQL is drafted.
+- Scope (strong-evidence): 3 Whiskey appointments (Mary Anca) + 2 Russell Cole / Kiwi appointments. Date-ambiguous deferrals: Kiwi 2024-07-??, Ruby 2024-08-??, Coco 2023-12-14.
 - Scope: 7 new clients + 8 pets. Mary Anca, Nancy Cauchi, Gardy, Ashley Nichols, Mary Nichols (+ Merlyn), Korrie Silver / Gavi, Christina Kitchen / Winston.
 
 **Phase 4 — Codex pet enrichment**
