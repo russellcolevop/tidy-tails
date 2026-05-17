@@ -1,9 +1,9 @@
 ---
 when: 2026-05-16
 who: CC
-purpose: Product definition for the scheduling-aware grooming cockpit ("Sam Scheduling OS"). Defines what a working v2 app for Samantha means beyond the read-only scaffold, captures her real grooming workflow as a domain model, and separates what is known from what only Sam can answer.
+purpose: Product definition for the Tidy Tails v2 guided scheduler. As of Samantha's 2026-05-16 Group A answers, v2 is scoped as the scheduling source of truth for her upcoming appointments — built in phases, not as a generic full scheduler. Captures her real grooming workflow as a domain model and separates what is known from what is still open.
 venture: tidy-tails
-status: DRAFT for Russell review. The scheduling domain (§3) carries open questions for Sam (§5) — nothing marked UNKNOWN may be built against until answered.
+status: DRAFT for Russell review. Group A answered by Samantha 2026-05-16 (§5). v2 is now scoped as a phased guided scheduler that owns her upcoming appointments. Residual follow-ups R1–R4 in §5/§11 do not block starting the build. This is a deliberate scope change from the prior "scheduling-aware cockpit" stance — see §1; a docs/DECISIONS.md entry is recommended.
 supabase_project: pgkwovokciaqnbhpttba
 related:
   - _reports/2026-05-15-v2-design-lock-spec.md
@@ -12,7 +12,8 @@ related:
   - _reports/2026-05-15-pawfinity-v2-implications.md
   - _reports/2026-05-15-v2-ship-2.2-auth-rls-plan.md
   - _reports/2026-05-16-phase-2-execution-report.md
-  - _reports/2026-05-13-sam-answers-batch-1.md
+  - _reports/2026-05-16-sam-scheduling-questions.md
+  - _reports/2026-05-16-sam-scheduling-answers.md
 ---
 
 # Sam Scheduling OS PRD — Tidy Tails v2
@@ -20,26 +21,23 @@ related:
 ## §0 — How to use this document
 
 **What this is.** A product definition. It states what "a working app for Sam"
-means, models her grooming workflow, and lists what must be learned before
-building. It is the bridge between the read-only v2 scaffold (Ship 2.1) and a
-cockpit Samantha runs a real workday from.
+means, models her grooming workflow, and tracks what is known versus still open.
+It is the bridge between the read-only v2 scaffold (Ship 2.1) and a guided
+scheduler Samantha runs her real workdays from.
 
 **What this is not.** Not an implementation plan, not a migration, not code. No
 SQL is written here. §6 describes schema *implications* in prose; actual
 migrations are drafted later, per ship, under the Ship 2.2 ratified rule that
 feature schema ships separately from the security migration.
 
-**The name.** "Sam Scheduling OS" is the kickoff name for this workstream. This
-PRD deliberately reinterprets it (see §1): v2 is a scheduling-*aware* cockpit,
-not a scheduling *system*. The phrase "Scheduling OS" must stay out of any
-user-facing copy — Samantha should never get the impression Tidy Tails has
-replaced her booking calendar. Internally, call the workstream what it is: the
-v2 grooming cockpit.
+**The name and the scope.** "Sam Scheduling OS" is the internal workstream name.
+As of 2026-05-16, v2 *is* scoped as a scheduler — see §1 — but a **phased,
+guided** one, not a generic calendar built all at once. Keep "Scheduling OS" out
+of user-facing copy: to Samantha the app is simply her grooming book and
+schedule.
 
 **Schema grounding.** §2, §3, and §6 are grounded in the *actual* live `public`
-schema, read read-only via `list_tables` on 2026-05-16 — not assumptions. The
-live schema is already substantially built (see the reference box below). Where
-the schema answers a question, this PRD says so and marks it KNOWN.
+schema, read read-only via `list_tables` on 2026-05-16 — not assumptions.
 
 > **Live `public` schema (read-only snapshot, 2026-05-16)** — seven tables, RLS
 > enabled on all (policies permissive — the R-1 risk).
@@ -62,80 +60,95 @@ the schema answers a question, this PRD says so and marks it KNOWN.
 > - `client_accounts` (0 rows): client-portal accounts with `pin_code`, `phone`.
 > - `sam_review_responses` (69 rows): the card-review form table.
 
-**Known vs unknown legend.** The domain model in §3 mixes established fact with
-genuine gaps. Every subsection is tagged:
+**Known vs unknown legend.** §3 tags every subsection:
 
-- **KNOWN** — assertable from the live schema, the Pawfinity recon, or venture
-  docs. Source is named.
-- **UNKNOWN** — only Samantha can answer. Routed to a numbered question in §5.
-  Building against an UNKNOWN means fabricating operator data, which the
-  operating model forbids. Do not.
+- **KNOWN** — assertable from the live schema, the Pawfinity recon, venture
+  docs, or **Samantha's 2026-05-16 Group A answers**. Source is named.
+- **OPEN** — not yet answered. Routed to a residual follow-up (§5) or a Group B
+  refinement. Building against an OPEN item means fabricating operator data,
+  which the operating model forbids. Do not.
 
-**Discipline.** This PRD models Samantha's scheduling rules in depth *without
-inventing her actual parameters*. The schema tells us a lot about *structure*;
-it does not tell us her durations, working hours, boss-work days, daily caps, or
-travel model — those are UNKNOWN. The grep of
-`_reports/2026-05-13-sam-answers-batch-1.md` confirmed her 49 prior review
-answers contain only data corrections — zero scheduling data. The unknowns are
-genuinely unknown. They are captured as questions, never guessed.
+**Discipline.** Samantha's Group A answers (2026-05-16) resolved most of what
+earlier drafts of §3 marked unknown. The few items still OPEN are tracked as
+residual follow-ups R1–R4 (§5) and are still never guessed. The capacity and
+duration rules Sam described are *her judgment expressed as factors* — v2
+encodes the factors, not a fabricated formula (see §4's over-automation
+principle).
 
 ---
 
-## §1 — Scope decision: a scheduling-aware cockpit
+## §1 — Scope decision: v2 as the scheduling source of truth (a guided scheduler)
 
-**The conflict this PRD had to resolve.** The kickoff asked for a "Scheduling
-OS." Four locked v2 documents say the opposite:
+**This is a scope change. State it plainly.** Earlier drafts of this PRD scoped
+v2 as a scheduling-*aware* cockpit that would *not* own a calendar — anchored to
+four locked documents:
 
 - `v2-design-lock-spec.md` §8 — do not build online booking / calendar /
   scheduling.
 - `v2-design-lock-prep.md` — "Samantha does not want Russell to build her
   calendar… Do not build it."
 - `pawfinity-logged-in-recon.md` §5 — "Samantha does not need Tidy to own
-  scheduling in v2… consider a later lightweight 'today list' only after
+  scheduling in v2… consider a later **lightweight 'today list'** only after
   Samantha confirms she wants scheduling inside Tidy."
 - `pawfinity-v2-implications.md` §4 — v2 should explicitly *not* build a full
   appointment calendar.
 
-**Resolution (Russell, 2026-05-16).** Option A: treat scheduling as operator
-intelligence, not a calendar replacement. v2 remains a scheduling-aware grooming
-cockpit. It captures Sam's scheduling rules deeply so it can be *smart* about
-the day, but it does not become the source-of-truth booking calendar unless
-Samantha explicitly asks for that later.
+**What changed (Samantha, 2026-05-16).** Asked directly whether Tidy's
+appointment list is her live schedule or just a mirror of paper/phone, Samantha
+answered: **Tidy Tails should be the real source of truth for upcoming
+appointments.** She opted in to v2 owning her schedule.
 
-**This PRD does not override design-lock §8.** A scheduling-aware cockpit is
-*consistent* with §8: it surfaces and references scheduling information; it does
-not own, generate, or publish it. §4 defines the formal gate by which §8 could
-one day be revisited — that gate, not this PRD, is the mechanism for any future
-scope change.
+**Be honest about how far this goes.** The locked docs anticipated a *possible*
+future opt-in — but the recon scoped that opt-in conservatively, as a
+"lightweight today list." Samantha's answer goes **further**: source-of-truth
+ownership of her upcoming appointments. So this PRD is not merely "satisfying a
+condition the locked docs set" — it is a **deliberate scope change beyond the
+conservative version those docs imagined.** It is intentional, driven by the
+operator's own request, and should be logged in `docs/DECISIONS.md` as a scope
+change so any agent picking this up sees it was decided, not slipped in.
+
+**The new stance.** v2 is the scheduling source of truth for Tidy Tails'
+upcoming appointments. But it is built as a **guided scheduler**, in phases — not
+a generic calendar app delivered in one shot:
+
+- **First** (milestones M3–M4): v2 holds and shows Sam's today + upcoming
+  schedule, and lets her create and edit appointments manually. This is the
+  scheduler's spine — v2 *becomes the book*.
+- **Then** (M5): v2 adds *guidance* — soft, explained warnings around capacity,
+  large-dog runs, crate space, service duration, temperament, and location.
+- **Then** (M6): reminders and rebooking surfaces.
+
+The phasing matters: it lets v2 become a trustworthy schedule Sam relies on
+*before* any clever rules are layered on, and it keeps each phase shippable and
+reversible. §4 defines the guided-scheduler shape, the surviving boundaries, and
+the "do not over-automate" principle.
 
 **v2 is a rebuild, not a greenfield.** Samantha already has a working operator
-tool: v1 — a set of Supabase-backed HTML modules (`client`, `intake`, `report`,
-`export`) she uses daily, writing to the same `public` schema above. v2 is a
-*secure, mobile-first, cockpit-shaped rebuild* of that tool, plus a genuinely new
-intelligence layer. The basic CRUD already exists; the "scheduling-aware" part —
-the today view and the smart warnings — is what is actually new.
+tool: v1 — Supabase-backed HTML modules (`client`, `intake`, `report`, `export`)
+she uses daily, writing to the same `public` schema. v2 is a secure,
+mobile-first, cockpit-shaped rebuild of that tool *plus* the guided scheduler.
 
 **What v2 IS (this PRD's scope):**
 
-- A **today view** of the day's appointments.
-- **Client and pet directory** with full appointment history (the scaffold
-  already does the read-only version of this).
-- **Recording** appointments Sam has agreed to (not slot-picking them).
-- **Logging completed grooms** — the core write that makes v2 a daily tool.
-- **Safety and care flags** surfaced at the moment Sam needs them.
-- **Rebooking and lapsed-client intelligence** built on the data Sam already has.
+- The **today + upcoming schedule** — v2 owns and shows Sam's appointments.
+- **Creating and editing appointments** directly in v2.
+- **Client and pet directory** with full appointment history.
+- **Logging completed grooms.**
+- **Guided scheduling warnings** — soft, explained (§4).
+- **Safety and care flags** surfaced when Sam needs them.
+- **Reminders and rebooking** surfaces.
+- **Keeping the digital book current** — first-class data entry/editing (§8).
 
-**What v2 IS NOT (yet):** the source-of-truth booking calendar, an availability
-engine, or anything that sends messages on its own. See §4 for the full
-anti-list and the graduation gate.
+**What v2 IS NOT:** see §4 — no online client self-booking, no automated message
+dispatch in the first cut, no public booking page.
 
 ---
 
 ## §2 — Gap analysis: v1 vs v2 scaffold vs "working app for Sam"
 
 v1 is **not** a marketing site. It is Samantha's working operator app — the
-Supabase-backed HTML modules she uses daily. v2 must reach feature parity with
-v1's operator function *and then* add what v1 lacks.
+Supabase-backed HTML modules she uses daily. v2 must reach parity with v1's
+operator function, add the guided scheduler, and close the security gap.
 
 | Capability | v1 (Supabase-backed HTML — Sam's tool today) | v2 scaffold (Ship 2.1, read-only) | Needed for a working v2 app |
 |---|---|---|---|
@@ -143,60 +156,70 @@ v1's operator function *and then* add what v1 lacks.
 | Client / pet directory | yes — `client.html`, with writes | yes — read-only search + detail | rebuild **with edit** |
 | Appointment history + financials | yes — `report.html` | yes — read-only | keep |
 | New-client / pet intake | yes — `intake.html`, with writes | none | **Required** — write |
-| Record / edit an appointment | yes — writes `appointments` | none | **Required** — write |
-| Log a completed groom | yes — `status` enum already exists | UI built, write-disabled | **Required** — write; **no migration** |
-| Today view (cockpit framing) | no | no | **Required** — new |
-| Lapsed-client surface | no | yes — read-only | keep |
+| Create / edit an appointment | yes — writes `appointments` | none | **Required** — write; v2 owns the schedule |
+| Today + upcoming schedule | no | no | **Required** — new (the guided scheduler) |
+| Recurring availability / boss-day pattern | no | no | **Required** — new |
+| Log a completed groom | yes — `status` enum exists | UI built, write-disabled | **Required** — write; **no migration** |
+| Guided scheduling warnings | no | no | **Required** — new (M5) |
+| Reminders / rebooking surface | no | partial — read-only lapsed view | **Required** — extend |
 | Revenue / month view | yes — `report.html` | yes — read-only | keep |
-| Smart warnings (load, allergy, overdue) | no | no | **Required** — new intelligence layer |
 | Mobile-first UX | no — desktop HTML | yes | the core v2 reshape |
 | RLS / data security | permissive — R-1 open | permissive (inherits live DB) | **Required** — Ship 2.2b cutover |
 
-**Reading the table.** The basic CRUD is not the gap — v1 already does it. The
-real gaps are three: **security** (the permissive-RLS R-1 hole, closed by the
-Ship 2.2b flag-day cutover); **form** (v1 is desktop HTML, v2 is a mobile-first
-cockpit Sam can use between dogs); and the **intelligence layer** (a today view
-and smart warnings — the genuinely new product surface). The v2 scaffold has
-already rebuilt the *read* half; every *write* path and the today view are
-unbuilt.
+**Reading the table.** Basic CRUD is not the gap — v1 already does it. The gaps
+are four: **security** (the R-1 hole, closed by the Ship 2.2b cutover); **form**
+(v1 is desktop HTML; v2 is a mobile-first app Sam uses between dogs); the
+**guided scheduler** (today + upcoming schedule, availability pattern, and the
+warnings layer — genuinely new); and **reminders/rebooking**.
 
-**The data-origin question.** v1 and v2 read and write the **same**
-`appointments` table — 730 rows today. So v2's today view is not starting from
-empty; it inherits whatever v1 has recorded. The open question is the
-relationship between that table and Pawfinity: is Tidy's `appointments` table
-Samantha's *live forward schedule*, kept current through v1, or a historical
-record running parallel to a Pawfinity calendar that is the real source of
-truth? That relationship — not a generic "transcription" assumption — is the
-load-bearing unknown. Routed to **Q-A4**.
+**Schedule source of truth — resolved.** Earlier drafts flagged an open question:
+is Tidy's `appointments` table Sam's live forward schedule, or a record running
+parallel to Pawfinity? Samantha's 2026-05-16 answer settles it — **v2's
+`appointments` table is now her schedule of record.** The remaining task is
+one-time onboarding: getting her current set of upcoming appointments *into* v2
+at cutover (§11). The v2 scaffold already reads the 730 historical rows; going
+forward, Sam maintains the schedule in v2.
 
 ---
 
 ## §3 — Scheduling domain model
 
-Each subsection: **Model** (the structure), **Known**, **Unknown** (→ §5),
-**Cockpit use** (how v2 surfaces it without owning it).
+Each subsection: **Model** (the structure), **Known**, **Open** (→ §5),
+**App use** (how v2 uses it).
 
 ### 3.1 Locations / work contexts
 
-**Model.** A *location* is where a given appointment happens. A *work context* is
-the broader arrangement — Tidy Tails grooming vs "boss-work days."
+**Model.** A *location* is where an appointment happens. A *work context* is the
+broader arrangement — Tidy Tails grooming vs the days Sam works for someone else.
 
-**Known.** The data model encodes **exactly two locations**: both
-`appointments.location` and `clients.preferred_location` carry a check
-constraint of `annette` | `gina`. `appointments` also has a `rent_paid` column —
-Samantha pays rent per appointment, consistent with renting space rather than
-owning a shop. Tidy Tails is a solo venture; Samantha is the only groomer;
-Barrie / Simcoe County, Ontario.
+**Known (Sam, 2026-05-16).** Samantha's week runs on a recurring pattern:
 
-**Unknown.** What `annette` and `gina` actually are (street locations? two shops
-she rents booth space in? a person's shop?); how the two locations relate to the
-"boss-work days" concept in venture docs; whether a location is ever effectively
-a boss arrangement. → **Q-A1, Q-A3.**
+| Day | Context |
+|---|---|
+| Monday | Tidy Tails grooming |
+| Tuesday | Works for Gina (not Tidy Tails) |
+| Wednesday | Works for Annette (not Tidy Tails) |
+| Thursday | Tidy Tails grooming |
+| Friday | Alternates — one week Tidy Tails grooming, the next works for Annette |
+| Saturday | Usually off; **one Saturday a month** is a Tidy Tails nail-trim clinic hosted at Ren's |
+| Sunday | (not specified — treat as off) |
 
-**Cockpit use.** v2 inherits the two-location vocabulary from the schema — the
-today view groups and labels appointments by location. v2 does **not** model the
-boss job; by data-minimization it needs only which *dates* are unavailable for
-Tidy Tails grooming (§3.6).
+The schema's `appointments.location` and `clients.preferred_location` are a
+two-value enum, `annette` | `gina`. `appointments` also has `rent_paid` — Sam
+pays rent per appointment, consistent with grooming out of rented space. Tidy
+Tails is a solo venture; Samantha is the only groomer; Barrie / Simcoe County,
+Ontario.
+
+**Open.** Two things: (a) **Ren's** is a third location the `annette|gina` enum
+cannot represent (§6 — model location flexibly). (b) The annette/gina rows in
+Tidy's DB are ambiguous — are they the grooming *Sam does at those spaces* on her
+Tidy Tails days, or do some rows record her employee work for Annette/Gina? →
+**residual follow-up R3.** Do not assume; it affects the schedule and any
+financial reporting.
+
+**App use.** The recurring weekly pattern is the backbone of the schedule (§3.6,
+§4). The app must let Sam edit the pattern intelligently — alternating Fridays
+and the monthly Saturday are not simple weekly rules.
 
 ### 3.2 Service types
 
@@ -204,299 +227,358 @@ Tidy Tails grooming (§3.6).
 duration.
 
 **Known.** `appointments.service_type` is a check-constrained enum:
-`full_groom` | `bath_only` | `nail_trim` | `other`. So the service taxonomy v1
-uses today is known. Pricing is captured: `appointments.fee` / `tip` / `net`
-and `pets.standard_fee`.
+`full_groom` | `bath_only` | `nail_trim` | `other`. Pricing is captured:
+`appointments.fee` / `tip` / `net` and `pets.standard_fee`. The monthly Ren's
+event is a nail-trim clinic — consistent with `nail_trim`.
 
-**Unknown.** Whether the four-value enum is still complete and current; what
-`other` usually covers in practice; whether service-to-duration is fixed; add-on
-handling. → **Q-A2.**
+**Open.** Samantha did **not** re-confirm the service list in her Group A
+answers. The four-value enum stands by default, but whether it is complete and
+current, and what `other` covers, is unconfirmed → **residual follow-up R1.**
 
-**Cockpit use.** Service type is shown on every appointment and feeds the
-duration reference (§3.4). v2 displays services; it does not price or sell them.
+**App use.** Service type is shown on every appointment and feeds the duration
+estimate (§3.4) and the guided warnings (§4).
 
 ### 3.3 Dog size / coat / handling profile
 
 **Model.** Per-pet attributes that shape how long and how carefully a groom
-takes: size, coat, handling difficulty.
+takes: size, coat, behavior/handling, age.
 
-**Known.** The `pets` table is already richly structured. `size` is a
-check-constrained enum: `small` | `medium` | `large` | `xl`. Handling is
-captured via `temperament_notes` and `behavior_flags` (free text). Safety data
-is structured: `allergies` (boolean) + `allergies_detail`, plus `medical_notes`,
-`vaccination_status`, `vet_contact`. `breed`, `grooming_style`, `clip_style`,
-`weight_lbs` all exist.
+**Known.** The `pets` table is richly structured. `size` is a check-constrained
+enum (`small` | `medium` | `large` | `xl`). Handling is captured via
+`temperament_notes` and `behavior_flags`. Safety data is structured: `allergies`
+(boolean) + `allergies_detail`, plus `medical_notes`, `vaccination_status`,
+`vet_contact`. `breed`, `grooming_style`, `clip_style`, `weight_lbs`, `age` all
+exist. Samantha confirmed (2026-05-16) that size, coat, behavior, and age all
+matter to how a groom goes.
 
-**Unknown.** There is **no dedicated `coat_type` column** — coat is only implied
-by `breed` / `grooming_style` / `clip_style`. Whether Sam wants a structured
-coat field; which specific dogs she treats as difficult (the text fields exist
-but their fill-rate and consistency are unconfirmed). → **Q-B3.**
+**Open.** There is no dedicated `coat_type` column — coat is implied by `breed` /
+`grooming_style` / `clip_style`. Whether a structured coat field helps →
+**Q-B3** (watch-week refinement).
 
-**Cockpit use.** Size drives the large-dog daily soft-cap (§3.8); allergies and
-behavior flags drive the safety warnings shown when Sam opens an appointment (§7
-flow 5). v2 reads the existing structured fields rather than inventing them.
+**App use.** Size and temperament feed the capacity warnings (§3.8, §4); size,
+coat, behavior, and age feed the duration estimate (§3.4); allergies and behavior
+flags drive the safety surfacing (§7 Flow 5).
 
-### 3.4 Appointment duration rules
+### 3.4 Appointment duration
 
-**Model.** Estimated duration as a function of service type, size, coat, and
-handling difficulty.
+**Model.** Estimated duration is a function of **service type, dog size, coat,
+behavior, and age** — plus a **per-dog override** for individual history.
 
-**Known.** The schema does **not** support duration. `appointments.time_slot` is
-free text, not start/end timestamps — duration is not derivable from existing
-data. The batch-1 answer grep confirmed zero duration data from Sam.
+**Known (Sam, 2026-05-16).** All of those factors matter; duration is genuinely
+multi-factor and per-dog. Samantha named **Milo and Chloe** as dogs/services
+that take longer than the factors alone would predict — confirming the need for
+a per-dog override, not just a service-level estimate. The schema does not yet
+support duration: `appointments.time_slot` is free text, not start/end times.
 
-**Unknown.** Samantha's entire duration matrix. → **Q-B1.**
+**Open.** The numeric duration values — how many minutes a `full_groom` on a
+`large` double-coated dog actually takes — are not specified. These are refined
+by observation (**Q-B1**), not surveyed up front.
 
-**Cockpit use.** v2 must **not** compute durations from a fabricated matrix.
-Until Sam validates a model, the honest path is a per-appointment duration Sam
-enters or confirms (this needs a new column — §6). v2 treats duration as a
-reference field, never a hard scheduling input.
+**App use.** v2 carries a **service-level duration estimate** and a **per-dog
+duration override** (§6). It must **not** invent a duration formula; until the
+estimate is validated by real logged grooms, duration is a reference Sam sees and
+adjusts, never a hard scheduling constraint.
 
-### 3.5 Allowed scheduling windows
+### 3.5 Working days and hours
 
-**Model.** Samantha's normal working hours and working days for Tidy Tails
-grooming.
+**Model.** The days Samantha grooms for Tidy Tails, and the hours within a
+grooming day.
 
-**Known.** `clients.preferred_day` (text) and `clients.preferred_frequency_weeks`
-exist — but these are *client* preferences, not Sam's own availability.
+**Known.** The **days** are known — the §3.1 weekly pattern. `clients.preferred_day`
+and `clients.preferred_frequency_weeks` capture *client* preferences.
 
-**Unknown.** Samantha's own working hours, working days per week, and any
-seasonal variation. → **Q-A5.**
+**Open.** Samantha's **hours within a grooming day** (typical start / end) were
+not specified → **residual follow-up R2.** Not blocking — the schedule view can
+default to a sensible day window until R2 lands.
 
-**Cockpit use.** Windows order the today view and give "is this a working day"
-context for rebooking suggestions. v2 does **not** enforce windows — there is no
-slot logic. Client `preferred_day` informs rebooking suggestions (§3.9).
+**App use.** Working days drive which dates the schedule offers; hours order the
+day. v2 does not hard-enforce hours — a late appointment is a soft note, not a
+block (§4).
 
-### 3.6 Blocked days / boss-work days
+### 3.6 Recurring availability and blocked days
 
-**Model.** A set of dates on which Tidy Tails grooming does not happen:
-boss-work days, days off, holidays, vacation.
+**Model.** Samantha's availability is a **recurring weekly pattern** (§3.1) plus
+**date-specific exceptions** — holidays, vacation, a swapped day, a one-off.
 
-**Known.** The "boss-work days" concept is established in venture docs. The
-schema has **no** representation for it — there is no availability or
-blocked-dates table.
+**Known (Sam, 2026-05-16).** The recurring pattern is explicit and not ad hoc:
+Tidy Tails on Mon / Thu / alternating Fri; not-Tidy-Tails on Tue / Wed /
+alternating Fri; a monthly Saturday at Ren's. The alternating Friday and the
+monthly Saturday make this more than a flat weekly rule — the model needs to
+express alternation and "Nth weekday of the month."
 
-**Unknown.** How frequent boss-work days are; which days; whether recurring
-(e.g., every Monday) or ad hoc. → **Q-A1.**
+**Open.** Date-specific exceptions are inherently ongoing — Sam adds them as they
+arise. No follow-up needed; the model just has to support them.
 
-**Cockpit use.** Blocked dates are excluded from rebooking suggestions and shown
-plainly in the today view. **Data-minimization:** v2 stores only the date and a
-coarse reason ("unavailable") — never what Samantha does on a boss day. A new
-`blocked_dates` table is needed (§6).
+**App use.** The schedule (§4) knows, for any date, whether it is a Tidy Tails
+grooming day, a day Sam works elsewhere, or off. Days Sam works elsewhere are a
+**hard** unavailable signal — booking a Tidy Tails appointment on a Gina/Annette
+day makes no sense — and are one of the few places v2 blocks rather than warns
+(§4). **Data-minimization:** v2 stores only that a date is unavailable and a
+coarse label; it does not model what Sam does on a boss day.
 
-### 3.7 Travel / pickup / drop-off constraints
+### 3.7 Location model and drop-off
 
-**Model.** Whether an appointment involves Samantha traveling to the dog, or the
-client dropping off and picking up.
+**Model.** Where grooming physically happens, and whether clients drop off.
 
-**Known.** The schema leans toward **fixed-location drop-off**: two named
-locations (`annette` / `gina`) plus per-appointment `rent_paid` describe working
-out of rented spaces, not a mobile route. This is suggestive, not conclusive.
+**Known.** Fixed-location, drop-off grooming: Samantha confirmed crate space (at
+Annette's) — crates mean dogs stay on site, i.e. drop-off, not a mobile route.
+Samantha herself works across locations on the §3.1 weekly rotation, and travels
+to Ren's for the monthly nail clinic.
 
-**Unknown.** Whether all grooming is drop-off at those two locations, or whether
-any mobile / at-home service exists; whether pickup-window timing constrains the
-day. → **Q-A3.**
+**Open.** Whether any client-facing mobile / at-home grooming exists — not
+mentioned by Sam; treat as not offered unless she says otherwise (low-priority,
+fold into R3 if it comes up).
 
-**Cockpit use.** If drop-off only, v2 does not model travel at all — it shows
-location per appointment and stops there. If any mobile service exists, travel
-affects today-view ordering. v2 cannot resolve this without Sam; it is a Group A
-question because it shapes the appointment record itself.
+**App use.** Each appointment carries a location (§6 — must support Ren's, not
+just annette/gina). The schedule groups by location.
 
-### 3.8 Daily load limits / large-dog cap
+### 3.8 Capacity and crate constraints
 
-**Model.** A maximum number of dogs per day, possibly with a sub-cap on
-large/XL or difficult dogs.
+**Model.** How much Samantha can take in a day — and it is **contextual, not a
+fixed number.**
 
-**Known.** Nothing — the schema has no capacity field.
+**Known (Sam, 2026-05-16) — verbatim shape of her rules:**
 
-**Unknown.** Whether Samantha works to explicit caps, and what they are.
-→ **Q-B2.**
+- Avoid more than **3 large dogs in a row**.
+- At **Annette's**, crate space holds only **2 big dogs** in at once.
+- **3 big dogs is sometimes possible** — if Sam knows their temperament and can
+  keep them out of crates.
+- Same-day limits depend on crate capacity, dog size, dog temperament, haircut
+  duration, service type, and **Samantha's judgment**.
+- Some dogs/services take longer (Milo, Chloe — §3.4).
+- Sam can do **up to about 6 dogs a day**, depending on size, space, service,
+  and temperament.
 
-**Cockpit use.** v2 surfaces a **soft warning** only — e.g., "6 dogs today, 2 are
-XL" (size is already a structured enum, so this count is computable). Never a
-hard block. Until Q-B2 is answered, v2 shows the counts without a threshold.
+**This is not a `max_daily_dogs = 6` rule.** "About 6" is a soft reference that
+*depends on* the size mix, crate space, temperament, and durations of that
+specific day. The capacity signal v2 computes is a *function of those factors*,
+surfaced as a soft warning — never a hard cap (§4).
 
-### 3.9 Reminder / rebooking / lapsed-client rules
+**Open.** The exact numbers (how a 3-XL day actually feels) refine by observation
+— **Q-B2**.
 
-**Model.** Three related things: (a) **rebooking cadence** — how often a dog
-should return; (b) **reminders** — surfacing upcoming or due dogs; (c)
+**App use.** v2 carries: a per-location **crate capacity** (Annette's = 2 big
+dogs); a soft **large-dogs-in-a-row** limit (~3); a **max daily dogs** reference
+(~6, contextual); and a per-dog **"can be out of crate"** flag that relaxes the
+crate count for dogs Sam trusts. All of these produce **soft, explained
+warnings** (§4) — they inform Sam's judgment, they never make the decision.
+
+### 3.9 Reminders, rebooking, and lapsed clients
+
+**Model.** (a) **Appointment reminders** — reminding owners of an upcoming
+appointment; (b) **rebook reminders** — prompting a rebook after a groom; (c)
 **lapsed-client detection** — clients overdue past their cadence.
 
-**Known.** This is the best-supported area. `clients.preferred_frequency_weeks`
-is a structured enum (`2,3,4,6,7,8,12` weeks) — the *intended* rebooking cadence
-already exists in the schema, per client. The `automations_log` table already
-models `reminder` / `follow_up` / `rebook_prompt` / `no_show` events over
-`sms` / `email` — though it is empty (the automation feature is unbuilt). v1 has
-a Twilio `send-sms` edge function for manual sends.
+**Known (Sam, 2026-05-16).** Samantha wants **owner appointment reminder
+messages** and **rebook reminders after an appointment**. For **new dogs,
+capturing allergy information matters** — and Samantha's current paper practice
+is to write allergy info on a card *only if there is something to worry about*
+(a blank card means "nothing to flag" — see §8.6). `clients.preferred_frequency_weeks`
+(enum `2,3,4,6,7,8,12`) holds the intended rebooking cadence. The
+`automations_log` table already models `reminder` / `follow_up` / `rebook_prompt`
+events over `sms` / `email` (empty — unbuilt). v1 has a Twilio `send-sms` edge
+function for manual sends.
 
-**Unknown.** Whether `preferred_frequency_weeks` is reliably populated across the
-131 clients; Samantha's working definition of "lapsed"; whether she wants
-reminders surfaced inside Tidy at all. Note `preferred_frequency_weeks` is
-per-*client*, not per-pet — a multi-dog household has one cadence. → **Q-A6,
-Q-B4.**
+**Open — R4: dispatch vs surface.** Samantha said she *wants* reminders; she did
+not say whether v2 should **auto-send** them or **surface** a "these owners need
+a reminder / these clients are due to rebook" list that she sends herself.
+**Default assumed:** v2 *surfaces*, Sam sends — automated SMS/email dispatch
+stays a separate, later, gated ship (consistent with design-lock's treatment of
+SMS). Confirm with Sam → **residual follow-up R4.**
 
-**Cockpit use.** Lapsed = a client whose last appointment is older than
-`preferred_frequency_weeks × 7` days; v2 reads the existing column rather than
-inventing one. The observed interval from appointment history is a useful
-cross-check and can be computed on read (§6 — no stored column required). v2
-**surfaces** due/overdue dogs and lists lapsed clients (§7 flow 6); it does
-**not** auto-send reminders (§4 anti-list).
-
----
-
-## §4 — Not Yet: Full Scheduler
-
-v2 is a scheduling-aware cockpit. It is **not** a scheduler. This section draws
-the line so a future agent does not drift across it.
-
-### What v2 explicitly does NOT build (anti-list)
-
-- **No calendar grid widget** — no month/week/day grid as a primary surface.
-- **No time-slot picker** — Sam does not pick an open slot inside v2.
-- **No booking-conflict / double-booking detection** — v2 has no authoritative
-  view of availability, so it cannot and must not claim to detect conflicts.
-- **No availability / open-slot engine** — no computing "free" times.
-- **No automated reminder or message dispatch** — v2 does not send SMS or email
-  on its own. (SMS is a separate, later, gated ship per design-lock.)
-- **No online client self-booking** — clients do not touch v2.
-
-### The schema already over-anticipates this — heed it as a warning
-
-The live schema contains three **empty** tables built ahead of any product:
-`booking_requests` (with an `ai_suggested_slot` jsonb column), `client_accounts`
-(a client portal with `pin_code`), and `automations_log`. Someone modeled a full
-self-service booking-and-automation product before Samantha asked for one. v2
-leaves these tables empty and unused. They are **not** evidence that v2 should
-build those features now — they are a concrete example of the exact build-ahead
-drift this section guards against.
-
-### Why
-
-Samantha's calendar source of truth is settled outside v2 (Pawfinity, pending
-Q-A4). Design-lock §8 forbids a v2 scheduler. Samantha has not asked for one. And
-a half-built scheduler is actively harmful: it creates a *second* authoritative
-calendar and an ongoing sync problem. A cockpit that *references* the schedule
-has no such failure mode.
-
-### Graduation decision gate
-
-v2 graduates from scheduling-aware cockpit to a real scheduling system only
-through this gate. A gate is criteria **plus** a review cadence **plus** an
-owner — criteria alone never get evaluated.
-
-**Owner.** Russell decides. Samantha's explicit, unprompted request is a
-*required input* — the gate cannot open without it.
-
-**Criteria — graduation is on the table when several of these hold:**
-
-1. Samantha explicitly asks Tidy Tails to own her scheduling.
-2. Samantha has effectively stopped using her external calendar day to day.
-3. Keeping Tidy's `appointments` data current has become the daily bottleneck
-   (Q-A4) and the fix is for v2 to own the calendar rather than mirror it.
-4. v2 has sustained lived adoption (the §10 lived-adoption criterion) for at
-   least one full review cycle — a cockpit Sam abandoned should not graduate.
-
-**Review cadence.** The gate is evaluated, not left dormant:
-
-- First evaluation: at the end of the post-cutover watch week.
-- Then every 90 days, or immediately whenever Samantha raises scheduling
-  unprompted — whichever comes first.
-- Each evaluation is a logged decision (in `docs/DECISIONS.md`): open the gate,
-  keep it closed, or revise the criteria.
-
-**If the gate never opens, that is a success, not a stall.** A cockpit that
-makes Sam's day easier without owning her calendar is the intended end state.
+**App use.** v2 computes due/overdue from `preferred_frequency_weeks` and the
+appointment history, and surfaces reminder and rebook lists (§7 Flow 6). New-dog
+intake prompts for allergies (§8.6).
 
 ---
 
-## §5 — Questions for Sam
+## §4 — A phased guided scheduler
 
-Tagged to the §3 subsection each unblocks. **Group A** must be answered before
-the corresponding build starts. **Group B** can be learned during the parallel
-run / watch week by observing real use.
+v2 is now the scheduling source of truth (§1) — but a **guided** scheduler,
+delivered in phases. This section defines its shape, the principle that governs
+it, and the boundaries that still hold.
 
-### Group A — must answer before build
+### The phasing
 
-| # | Question | Unblocks |
+- **M3–M4 — the spine.** v2 holds Sam's today + upcoming schedule and lets her
+  create and edit appointments manually, against her recurring availability
+  pattern. No clever rules yet — just a schedule she can trust.
+- **M5 — the guidance.** v2 adds soft, explained warnings: large-dog runs, crate
+  capacity, daily load, service duration, temperament, location.
+- **M6 — reminders and rebooking.**
+
+Building the spine first means v2 earns trust as a plain, reliable schedule
+before any rule can get in Sam's way. See §9 for the milestone detail.
+
+### Principle: do not over-automate Samantha's judgment
+
+Samantha's scheduling is judgment-heavy — she said so directly: capacity "depends
+on… Sam's judgment," and "3 big dogs is sometimes possible if she knows their
+temperament." v2 must respect that:
+
+- **The app warns and explains. It does not silently block.** When something is
+  tight — a fourth large dog in a row, a third big dog past Annette's crate
+  space, a heavy-duration day — v2 shows a clear, specific, *explained* warning
+  ("That's 3 large dogs in a row" / "Annette's crates hold 2 big dogs; this is
+  the 3rd") and lets Samantha proceed anyway. She knows the dogs; the app does
+  not.
+- **The only hard blocks are genuine impossibilities** — booking a Tidy Tails
+  appointment on a day Sam works for Gina or Annette, or at a location that
+  isn't open. Hard-unavailable days and locations (§3.6) are the narrow
+  exception where v2 stops rather than warns.
+- **Never fabricate a number to enforce.** Capacity and duration are factors v2
+  surfaces, not a formula it imposes. A warning that cites a real factor ("2 XL
+  dogs already today") helps; a warning from an invented threshold erodes trust.
+
+This principle is the test for every rule added in M5: if it would *block* Sam
+on anything short of a real impossibility, it is wrong.
+
+### What v2 still does NOT build (the surviving boundary)
+
+The scope change in §1 is specifically about Samantha's *own* scheduling. It does
+**not** open these:
+
+- **No online client self-booking.** Clients do not touch v2. The empty
+  `booking_requests` and `client_accounts` tables stay empty — they were modeled
+  ahead of any product and are not a mandate to build a client portal.
+- **No automated message dispatch in the first cut.** v2 *surfaces* reminders;
+  Samantha sends them. Automated SMS/email dispatch is a separate, later, gated
+  ship (R4, design-lock).
+- **No public-facing booking page.**
+- **No conflict/double-booking *enforcement*.** v2 can warn that a slot looks
+  full; per the principle above, it does not hard-block.
+
+### The graduation gate is retired
+
+Earlier drafts carried a "graduation gate" — criteria, a review cadence, and an
+owner — for *if* v2 should ever become a real scheduler. That gate did its job:
+it forced the question to be asked instead of assumed. Samantha was asked
+plainly (the §5 question sheet) and answered. The gate is now **retired, not
+repurposed** — there is no reverse gate for rolling back to cockpit-only. If the
+source-of-truth approach fails in real use, that shows up as a §10 lived-adoption
+failure, which is the honest signal, not a gate event.
+
+---
+
+## §5 — Questions for Sam — Group A answered 2026-05-16
+
+Samantha answered the Group A question sheet
+(`_reports/2026-05-16-sam-scheduling-questions.md`) on 2026-05-16; her answers
+were relayed by Russell. Each answer, the interpretation, and what it resolves
+are captured in `_reports/2026-05-16-sam-scheduling-answers.md`.
+
+### Group A — resolution
+
+| # | Question | Resolution |
 |---|---|---|
-| Q-A1 | Which days are boss-work days, or otherwise blocked for Tidy Tails grooming? Is there a recurring pattern (e.g., every Mon/Tue) or is it ad hoc week to week? | §3.1, §3.6 — today view, rebooking |
-| Q-A2 | Your records use four service types — full groom, bath only, nail trim, and "other." Is that still your real service list? What does "other" usually mean? | §3.2 — service modeling |
-| Q-A3 | Your data uses two locations, "annette" and "gina," and records rent per appointment. What are those two places? Do clients drop dogs off at fixed locations, or is there any mobile / at-home grooming? | §3.7, §3.1 — appointment record shape, UX |
-| Q-A4 | What is the relationship between the appointment list in Tidy's database and your Pawfinity calendar? Do you keep Tidy's appointments current yourself, or is Pawfinity where your live, forward schedule actually lives? | §2, §3, all of M3 |
-| Q-A5 | What are your normal working hours and working days for Tidy Tails grooming? | §3.5 — today view, rebooking |
-| Q-A6 | Do you want Tidy to remind you about upcoming or due-for-groom dogs, or does your current setup handle reminders well enough? | §3.9 — milestone M5 |
+| Q-A1 | Boss-work / blocked days | **ANSWERED** — recurring weekly pattern (§3.1, §3.6). |
+| Q-A2 | Service list | **NOT ANSWERED** — Sam did not re-confirm the list; four-value enum stands by default → **R1**. |
+| Q-A3 | Locations / drop-off vs mobile | **ANSWERED (partial)** — fixed-location drop-off (§3.7); residual on annette/gina row meaning → **R3**. |
+| Q-A4 | Scheduling source of truth | **ANSWERED — load-bearing.** v2 owns upcoming appointments; drives §1 and §4. |
+| Q-A5 | Working days / hours | **ANSWERED (partial)** — days known (§3.1); daily *hours* not specified → **R2**. |
+| Q-A6 | Reminders | **ANSWERED** — owner appointment + rebook reminders wanted (§3.9); dispatch vs surface → **R4**. |
 
-**Q-A4 is the load-bearing question.** v1 and v2 share Tidy's `appointments`
-table (730 rows). If Samantha keeps that table current, v2's today view has live
-data and the cockpit works as designed. If Pawfinity is her live calendar and
-Tidy's table is a parallel or historical record, the today view shows a stale or
-partial picture — and the milestone must be re-scoped (e.g., a periodic
-Pawfinity export/import, if Pawfinity offers one — itself unconfirmed, see §11).
-Either way the today view must be **honestly labeled**: it shows the
-appointments *in Tidy*, and the label should say so rather than imply a complete
-schedule.
+Samantha also volunteered answers to two Group B questions early: **Q-B1**
+(duration factors — §3.4) and **Q-B2** (capacity — §3.8).
 
-### Group B — can learn during the parallel run / watch week
+### Residual follow-ups — R1–R4 (small; do not block starting the build)
 
-| # | Question | Refines |
-|---|---|---|
-| Q-B1 | How long does each service actually take, by dog size and coat? | §3.4 — duration reference |
-| Q-B2 | How many dogs is a full day? Is there a cap on large/XL or difficult dogs in one day? | §3.8 — daily-load warning threshold |
-| Q-B3 | Coat type isn't recorded separately today — would a coat field help? And which dogs need special handling beyond what's already noted? | §3.3 — coat field, handling flags |
-| Q-B4 | Is the "rebook every N weeks" value we have for each client accurate? (We'll show it; you confirm or correct.) | §3.9 — rebooking cadence |
-| Q-B5 | Which care flags (allergies, vaccine status, behavior) matter most to you in the moment? | §3.3, §7 flow 5 |
+- **R1 (Q-A2) — service list.** Confirm the four service types are still
+  complete and current; clarify what `other` covers. Needed before the M5
+  service-duration work.
+- **R2 (Q-A5) — daily hours.** Sam's typical start/end on a grooming day. Needed
+  before the schedule orders the day precisely; can default in the interim.
+- **R3 — annette/gina row meaning.** Are the Tidy DB rows at location
+  `annette`/`gina` the grooming Sam does at those spaces, or do some record her
+  employee work for Annette/Gina? Affects the schedule and any financial view.
+- **R4 — reminder dispatch vs surface.** Does Sam want v2 to auto-send reminders,
+  or surface a list she sends herself? Default assumed: surface. Confirm before
+  M6.
 
-Group B answers are *observed*, not surveyed up front — the watch week exists to
-let real use teach these without blocking the build.
+### Group B — refinements during the watch week
+
+Q-B1 (duration factors) and Q-B2 (capacity) — **answered early** by Sam; the
+numeric specifics still refine by observation. Q-B3 (structured coat field),
+Q-B4 (cadence accuracy per client), Q-B5 (which care flags matter most) remain
+watch-week refinements — observed in real use, not surveyed up front.
 
 ---
 
 ## §6 — Database schema implications (no migrations)
 
-This section describes what the cockpit needs. **No SQL is written here.** Per
-the ratified Ship 2.2 scope, feature schema ships as separate migrations inside
-the ships that build those features (2.3+), never bundled with the security
-migration. Nothing below is built until the relevant §5 Group A question is
-answered.
+This section describes what the guided scheduler needs. **No SQL is written
+here.** Per the ratified Ship 2.2 scope, feature schema ships as separate
+migrations inside the ships that build those features, never bundled with the
+security migration.
 
-**Most of the cockpit needs no new schema.** The §0 schema snapshot shows the
-existing tables already support the core writes:
+**Much of the cockpit needs no new schema.** The §0 snapshot shows the existing
+tables already support the core writes:
 
 - **Logging a completed groom** is an `UPDATE` of `appointments.status` to
-  `completed` — the enum value already exists. **No migration.**
-- **Recording a new appointment** is an `INSERT` into `appointments` with
-  `status = 'booked'` — every needed column (`date`, `time_slot`, `location`,
-  `service_type`, `fee`) already exists. **No migration.**
-- **Care flags, size, allergies, behavior** already exist as structured columns
-  on `pets`. **No migration** to surface them.
-- **Rebooking cadence** already exists as `clients.preferred_frequency_weeks`.
-  Lapsed status is computed on read. **No migration.**
+  `completed` — the enum value exists. **No migration.**
+- **Creating an appointment** is an `INSERT` into `appointments` — `date`,
+  `time_slot`, `location`, `service_type`, `fee`, `status` all exist. **No
+  migration** for the appointment record itself.
+- **Care flags, size, allergies, behavior** exist as structured `pets` columns.
+- **Rebooking cadence** exists as `clients.preferred_frequency_weeks`.
 
 **The one required schema change is security:** the Ship 2.2 migration adds
-`groomer_id` to the core tables and rewrites RLS against `auth.uid()`. Every
-table below must be created or altered with that scoping from the start — feature
-schema must not reintroduce the permissive R-1 pattern.
+`groomer_id` to the core tables and rewrites RLS against `auth.uid()`. Every new
+table or column below must carry that scoping from the start — feature schema
+must not reintroduce the permissive R-1 pattern.
 
-**Genuinely missing — feature additions, each gated on a §5 answer:**
+### 6.1 The scheduling-rules model (new feature schema)
 
-- **`blocked_dates` table** (date, coarse reason) — for boss-work days and time
-  off (§3.6). No equivalent exists today. Gated on **Q-A1**. Stores dates only,
-  never boss-job detail.
-- **Per-appointment `duration`** column on `appointments` — only if Sam wants
-  duration tracked; `time_slot` is free text and cannot carry it. Gated on
-  **Q-B1**.
-- **Structured `coat_type`** on `pets` — only if Q-B3 says a coat field helps.
-- **`pets.allergies` tri-state** — the column is `boolean default false`, so it
-  cannot tell "no known allergies" apart from "unknown / not yet asked." A third
-  state, or a companion `allergies_confirmed` flag, is needed so v2 does not
-  display a false "Allergies: No" (§8.6). Safety-relevant — confirm with Sam.
-- **`services` reference table** (name, typical duration, active flag) — only if
-  Q-A2 reveals the four-value `service_type` enum is too coarse. Otherwise the
-  existing enum stands.
+The guided scheduler (§4) needs a small set of new structures. Described in
+prose; drafted as migrations later, gated where noted.
+
+- **Work context / availability.** A **recurring weekly availability pattern**
+  per weekday (Tidy Tails grooming / works elsewhere / off), able to express
+  *alternation* (alternating Fridays) and *Nth-weekday-of-month* (the monthly
+  Ren's Saturday); plus a **date-exceptions** table for holidays, vacation, and
+  swaps. This supersedes the simple `blocked_dates` table earlier drafts
+  proposed.
+- **Locations.** The `annette|gina` enum cannot represent **Ren's**. Model
+  location flexibly — a small `locations` reference table (or an equivalent) so
+  a third (and future) location is data, not a schema change. Per-location
+  attributes include **crate capacity** (Annette's = 2 big dogs).
+- **Capacity rules.** A soft **large-dogs-in-a-row** limit (~3) and a **max daily
+  dogs** reference (~6) — stored as *reference values feeding contextual
+  warnings*, never as hard caps. The real signal is computed from the day's size
+  mix × crate capacity × temperament × durations (§3.8, §4).
+- **Service duration estimate.** A typical-duration value per service type
+  (pairs with a possible `services` reference table — R1).
+- **Per-dog duration override** on `pets` — for dogs like Milo and Chloe whose
+  real time differs from the service estimate.
+- **Temperament override** — a structured signal (beyond free-text
+  `temperament_notes`) that a dog is easy or difficult, feeding the warnings.
+- **"Can be out of crate" flag** on `pets` — relaxes a location's crate-capacity
+  warning for dogs Sam trusts loose.
+- **Warning model.** Every rule resolves to **hard** or **soft**. *Hard* =
+  genuine impossibility (a non-Tidy-Tails day, a closed location) → v2 blocks.
+  *Soft* = capacity, large-dog run, crate, duration, load → v2 warns and
+  explains, never blocks (§4).
+
+### 6.2 Other feature additions (each gated on a §5 item)
+
+- **Per-appointment `duration`** on `appointments` — `time_slot` is free text and
+  cannot carry it. Gated on Q-B1.
+- **`pets.allergies` tri-state.** The column is `boolean default false`, so it
+  cannot tell "no known allergies" from "not yet asked." Samantha's paper
+  practice — note allergies *only if there's something to worry about* — maps to
+  exactly three states: **flagged**, **checked-and-clear**, **not yet asked**. A
+  third state (or an `allergies_confirmed` companion flag) is needed so v2 does
+  not show a false "Allergies: No" (§8.6). Safety-relevant.
+- **Structured `coat_type`** on `pets` — only if Q-B3 says it helps.
+- **`services` reference table** — only if R1 reveals the four-value enum is too
+  coarse.
+- **Edit-history / `audit_events` table** — for §8.5. Design-lock §3.6 floated
+  it as optional; §8 makes it recommended.
+- **Archived flag** on `clients` / `pets` — for §8.3 archiving.
 
 **Explicitly not needed:** a stored per-pet "typical interval" column — the
 intended cadence is `preferred_frequency_weeks`, and the observed interval is
-cheap to compute on read from appointment history.
+cheap to compute on read.
 
 **Confirm before drafting any migration.** Re-read the live schema
 (`list_tables`, read-only) at migration-draft time; this PRD's snapshot is dated
@@ -508,106 +590,106 @@ cheap to compute on read from appointment history.
 
 Six flows. Each: **trigger**, **steps**, **what v2 shows**, **out of scope**.
 
-### Flow 1 — Morning schedule review (today view)
+### Flow 1 — Morning schedule review (today + upcoming)
 
 - **Trigger.** Sam opens v2 at the start of her workday.
-- **Steps.** Land on the today view → see today's appointments (from
-  `appointments` where `date` is today) in `time_slot` order → tap one for the
-  dog's profile, history, and care flags.
-- **v2 shows.** The day's appointments grouped by location (`annette` / `gina`),
-  each row showing dog, client, service, and any care flag; a clear note if
-  today is a blocked / boss-work day. The surface is labeled honestly per Q-A4 —
-  it shows the appointments recorded in Tidy.
-- **Out of scope.** No calendar grid; no editing of *availability* here.
+- **Steps.** Land on today's schedule → see today's appointments in time order →
+  swipe/scroll to upcoming days → tap an appointment for the dog's profile,
+  history, and care flags.
+- **v2 shows.** The day's appointments grouped by location, each row showing dog,
+  client, service, and any care flag; a clear marker on non-Tidy-Tails days
+  (Gina/Annette) and the monthly Ren's clinic. This is Sam's schedule of record.
+- **Out of scope.** No editing of the recurring availability pattern here (that
+  is its own surface).
 
-### Flow 2 — Recording a new appointment
+### Flow 2 — Scheduling an appointment (guided)
 
-> Reframed from the kickoff's "booking a new appointment." v2 does not *book* —
-> Sam agrees an appointment, then records it (`INSERT` with `status='booked'`).
-
-- **Trigger.** Sam has agreed an appointment with a client.
-- **Steps.** From a client/pet, choose "Record appointment" → pick date, time
-  slot, location, and service type → save.
-- **v2 shows.** A lightweight form over existing `appointments` columns; the
-  appointment then appears in the today view on its date and in the pet's
-  history.
-- **Out of scope.** No slot picker; no availability check; no conflict detection
-  (§4 anti-list).
+- **Trigger.** Sam is booking an appointment with a client.
+- **Steps.** From a client/pet, choose "Add appointment" → pick date, time,
+  location, service → v2 shows any **soft warnings** (large-dog run, crate space,
+  load, duration) with the reason → Sam confirms or adjusts → save.
+- **v2 shows.** A lightweight form; guided warnings that explain themselves; a
+  **hard stop only** if the date is a non-Tidy-Tails day or a closed location
+  (§4).
+- **Out of scope.** No client self-booking; no automatic slot assignment — Sam
+  chooses, v2 advises.
 
 ### Flow 3 — Rebooking after a groom
 
 - **Trigger.** A groom just finished and the client wants to rebook.
-- **Steps.** From the completed appointment, choose "Rebook" → v2 suggests a
-  return date from `clients.preferred_frequency_weeks`, landing on the client's
-  `preferred_day` and skipping blocked dates → Sam adjusts and confirms → it
-  becomes a recorded appointment (Flow 2).
+- **Steps.** From the completed appointment, "Rebook" → v2 suggests a return date
+  from `preferred_frequency_weeks`, landing on a Tidy Tails day near the client's
+  `preferred_day` → Sam adjusts and confirms → it becomes a scheduled
+  appointment (Flow 2, including its warnings).
 - **v2 shows.** A suggested date with its reasoning ("every 6 weeks, prefers
-  Tuesdays"), presented as a starting point Sam overrides freely.
-- **Out of scope.** v2 does not push the booking into any external calendar.
+  Thursdays"), as a starting point Sam overrides freely.
+- **Out of scope.** No automatic booking — Sam confirms every rebook.
 
 ### Flow 4 — Logging a completed groom
 
-> The core write that turns v2 from a viewer into a daily tool. It is an
-> `UPDATE` of an existing row — no schema change.
+> The core write that turns v2 into a daily tool. An `UPDATE` of an existing row
+> — no schema change.
 
 - **Trigger.** Sam finishes grooming a dog.
 - **Steps.** Open the appointment → mark complete (`status='completed'`) →
-  optionally record `fee`/`tip` and a groom note in `notes`.
+  optionally record `fee`/`tip` and a groom note.
 - **v2 shows.** The appointment flips to "completed"; the note joins the pet's
-  history and informs the next visit.
-- **Out of scope.** No invoicing/payment processing; no automated client message.
+  history and informs the next visit and its duration estimate.
+- **Out of scope.** No invoicing/payment processing.
 
-### Flow 5 — Allergy / vaccine / special-care flags
+### Flow 5 — Care flags and new-dog allergy capture
 
-- **Trigger.** Sam opens a dog's profile or an appointment for that dog.
-- **Steps.** Care flags are visible without hunting — `allergies` /
-  `allergies_detail`, `vaccination_status`, `medical_notes`, `behavior_flags`,
-  `temperament_notes` shown prominently at the top of the dog's context.
-- **v2 shows.** The existing structured fields surfaced at appointment time, so
-  a muzzle-required or allergy fact cannot be missed.
+- **Trigger.** Sam opens a dog's profile or appointment; or adds a new dog.
+- **Steps.** Care flags — `allergies`/`allergies_detail`, `vaccination_status`,
+  `medical_notes`, `behavior_flags`, `temperament_notes` — show prominently. For
+  a **new dog**, intake **prompts for allergies** and lets Sam pick **"no known
+  allergies"** as a real, affirmative answer (her paper "checked, nothing to
+  flag") — distinct from leaving it unanswered (§8.6).
+- **v2 shows.** Structured flags surfaced at appointment time, so an allergy or
+  muzzle-required fact cannot be missed.
 - **Out of scope.** v2 does not verify vaccine records or contact a vet.
 
-### Flow 6 — Finding lapsed clients
+### Flow 6 — Reminders and lapsed clients
 
-- **Trigger.** Sam wants to fill quiet days or win back clients.
-- **Steps.** Open the lapsed-clients surface (the scaffold already has a
-  read-only version) → see clients whose last appointment is older than their
-  `preferred_frequency_weeks` cadence, sorted by how overdue → tap through to
-  reach out via her normal channel.
-- **v2 shows.** A ranked list with each client's last visit and cadence.
-- **Out of scope.** v2 does not send the outreach message (§4 anti-list).
+- **Trigger.** Sam wants to send appointment reminders, prompt rebookings, or win
+  back lapsed clients.
+- **Steps.** Open the reminders surface → see owners with an upcoming appointment
+  to remind, clients due to rebook after a recent groom, and clients lapsed past
+  their cadence → tap through to reach out via her normal channel.
+- **v2 shows.** Ranked lists with the relevant date and cadence for each.
+- **Out of scope.** v2 *surfaces*; Samantha sends. Automated dispatch is a later
+  gated ship (R4, §4).
 
 ---
 
-## §8 — Sam can fix the book herself: data correction as a first-class workflow
+## §8 — Keeping the digital book current
 
-**Why this is a first-class workflow, not an admin afterthought.** Tidy Tails'
-data has been wrong, and fixing it has been a project of its own. Phase 1 and
-Phase 2 dedup, 79 reconciled contact cards, ~215 open data decisions logged for
-triage, Samantha's card-review responses — that entire workstream exists because
-the book had errors and only Russell and agents could correct them. v2 must
-close that loop. If Samantha finds a wrong phone number, a misspelled dog name,
-or a missing appointment, she must be able to fix it **herself, inside the app,
-without Russell, without SQL, without an agent**. A cockpit she cannot correct is
-a cockpit she will not trust — she will keep a paper book as the "real" record,
-and v2 fails the §10 lived-adoption bar. Data correction is therefore designed in
-from the first write milestone (M2) onward, not bolted on later.
+**Why this is a first-class workflow.** Samantha's client and pet records have
+always lived on paper cards. The reconciliation workstream — Phase 1/2 cleanup,
+79 digitized contact cards, ~215 triage decisions, her own card-review answers —
+was the one-time job of getting that paper system into the database. Samantha
+does not think of her cards as "wrong"; the task was **digitizing**, not fixing.
+Going forward, the digital book only stays useful if Samantha can **keep it
+current herself** — a new client, a new dog, a changed phone number, a new
+appointment — entered in the app, in the moment, without Russell, without SQL,
+without an agent. If she cannot, the digital book drifts and she falls back to
+paper, and v2 fails the §10 lived-adoption bar. Keeping the book current is
+designed in from the first write milestone (M2) onward.
 
-**Scope note.** This section covers Samantha correcting records **one at a
-time**. Bulk operations — CSV import, and especially *merging duplicate records*
-— are explicitly **out of scope** for v2's first cut. A merge re-points foreign
-keys (the exact operation Phase 2 performed via guarded SQL) and is too
-destructive for an unassisted in-app action. v2 may *surface* a suspected
-duplicate as a warning (§8.2), but performing the merge stays an assisted
-operation (Russell / agent) until a safe in-app merge flow is separately
-designed.
+**Scope note.** This section covers Samantha updating records **one at a time**.
+Bulk operations — CSV import, and especially *merging duplicate records* — are
+**out of scope** for v2's first cut. A merge re-points foreign keys (the
+operation Phase 2 performed via guarded SQL) and is too destructive for an
+unassisted in-app action. v2 may *surface* a suspected duplicate as a warning
+(§8.2); performing the merge stays an assisted operation until a safe in-app
+merge flow is separately designed.
 
 ### 8.1 Inline editing from every detail surface
 
-Every field shown on a client, pet, or appointment detail screen — and every
-editable value on a daily-schedule row — is editable in place. Tap the field,
-change it, save. There is no separate "admin" or "settings" area for data
-correction: the place Sam *sees* a value is the place she *fixes* it.
+Every field on a client, pet, or appointment detail screen — and every editable
+value on a schedule row — is editable in place. Tap the field, change it, save.
+There is no separate "admin" area: the place Sam *sees* a value is the place she
+*updates* it.
 
 Editable field inventory (all already in the live schema):
 
@@ -620,8 +702,8 @@ Editable field inventory (all already in the live schema):
   standard_fee.
 - **Appointment:** date, time_slot, location, service_type, fee, tip, status,
   notes.
-- **Daily schedule row:** quick-edit of an appointment's time_slot, location,
-  service_type, and status without leaving the today view.
+- **Schedule row:** quick-edit of an appointment's time, location, service, and
+  status without leaving the schedule.
 
 Editing rules:
 
@@ -629,177 +711,148 @@ Editing rules:
   preferred_frequency_weeks) edit through a **picker constrained to the schema's
   allowed values** — Sam cannot enter a value the database would reject.
 - Free-text fields use a plain text input; booleans use a toggle.
-- Saving is explicit, and light-touch validation runs at the boundary (an
-  obviously malformed phone number is flagged, not silently stored).
-- Edits are scoped — a field or a card at a time, not a whole-record form Sam
-  must re-fill.
+- Saving is explicit; light-touch validation runs at the boundary.
+- Edits are scoped — a field or a card at a time.
 
 ### 8.2 Add-missing flows
 
 When a record does not exist, Samantha creates it without leaving her flow:
 
-- **Add a missing client.** If a search returns nothing, the empty result offers
-  "Add new client" directly.
-- **Add a missing pet.** From a client's detail screen, "+ Add pet."
-- **Add a missing appointment.** From a client or pet, or from the daily
-  schedule, "+ Add appointment" — this is §7 Flow 2.
+- **Add a client.** An empty search result offers "Add new client" directly.
+- **Add a pet.** From a client's detail screen, "+ Add pet."
+- **Add an appointment.** From a client/pet or the schedule — this is §7 Flow 2.
 
-New records are created with **only the fields Samantha has**. Minimum to
-create: a client needs at least a name or a phone number; a pet needs a name and
-a client; an appointment needs a client, a pet, and a date. Everything else is
-"unknown for now" (§8.6), filled in as she learns it.
+New records are created with **only the fields Samantha has**. Minimum to create:
+a client needs a name or a phone; a pet needs a name and a client; an appointment
+needs a client, a pet, and a date. Everything else is "unknown for now" (§8.6),
+filled in as she learns it.
 
 ### 8.3 Archive / inactive — not hard delete
 
-The default way to remove a record from view is to **archive** it (mark it
-inactive), never to hard-delete it.
+The default way to remove a record from view is to **archive** it, never to
+hard-delete it.
 
-Why archive, not delete:
+- Hard delete is irreversible and foreign-key-dangerous — deleting a client
+  orphans its pets and appointments, the failure class Phase 2's invariants
+  guarded against.
+- The live DB already blocks anon hard-deletes (the DELETE policies on
+  `clients`/`pets`/`appointments` were dropped 2026-04-22; no v1 module calls
+  `.delete()`). v2 should formalize archiving, not reintroduce delete.
 
-- Hard delete is irreversible and foreign-key-dangerous. Deleting a client
-  orphans its pets and appointments — the exact orphan-FK failure class Phase 2's
-  invariants were written to prevent.
-- The live database already blocks anon hard-deletes: the DELETE RLS policies on
-  `clients`, `pets`, and `appointments` were dropped 2026-04-22, and no v1 module
-  calls `.delete()`. v2 should not reintroduce hard delete; it should formalize
-  archiving.
+Behavior: archived records are hidden from default lists, reachable behind an
+"include archived" toggle, and fully preserved as history. A cancelled
+appointment (`status='cancelled'`) is its own archive state; clients and pets
+need an explicit archived flag (§6). Un-archiving is one tap. Hard delete is not
+a Samantha-facing action.
 
-Behavior:
+### 8.4 Confirmation rules for high-risk changes
 
-- Archived records are hidden from default search and lists, reachable behind an
-  "include archived" toggle, and fully preserved — an archived client's past
-  appointments stay valid history.
-- A cancelled appointment (`status = 'cancelled'`) is effectively its own archive
-  state; clients and pets need an explicit archived flag (§6).
-- Un-archiving is a one-tap reversal.
-- Hard delete is **not a Samantha-facing action at all.** If a record genuinely
-  must be destroyed (true test data, a record created entirely in error), that
-  remains an assisted operation.
+Confirmation friction scales with reversibility and blast radius.
 
-### 8.4 Confirmation rules for destructive or high-risk changes
+- **Low-risk** (a note, a fee, a spelling): saves directly, no confirmation —
+  the common case, kept fast.
+- **Medium-risk** (a phone number, a name, an appointment date; archiving a
+  pet): a lightweight one-tap confirm.
+- **High-risk** — a confirmation that **names the downstream effect**: archiving
+  a client with dependents ("…also hides 3 pets and 12 appointments"); editing a
+  safety field (allergies, vaccination_status, medical_notes — a wrong safety
+  edit is a dog-safety risk); reverting a completed appointment to booked.
+- No hard-delete confirmation because there is no hard delete.
 
-Confirmation friction scales with reversibility and blast radius. Do not make
-Samantha confirm a typo fix; do make her confirm an allergy change.
+### 8.5 Edit history for important updates
 
-- **Low-risk** (fixing a note, correcting a fee, a spelling fix): saves directly,
-  no confirmation. This is the common case and must stay fast.
-- **Medium-risk** (changing a phone number, a client or pet name, an
-  appointment's date; archiving a pet): a lightweight inline confirm — one tap.
-- **High-risk** — an explicit confirmation that **names the downstream effect**:
-  - Archiving a client that has pets/appointments: "Archiving Jane Donaldson also
-    hides 3 pets and 12 appointments from your lists. They stay in history.
-    Continue?"
-  - Editing a safety field (allergies, allergies_detail, vaccination_status,
-    medical_notes) — a wrong safety edit is a dog-safety risk.
-  - Reverting a completed appointment's status back to booked.
-- There is no hard-delete confirmation because there is no hard delete (§8.3).
+Important updates are recorded: **who, when, old value → new value.** "Important"
+means safety fields, identity/contact fields, financial fields, appointment
+status and date, and archive/un-archive. Routine note edits need not be logged.
 
-### 8.5 Audit / edit history for important edits
+Why: a history lets Samantha undo a mistaken update, and — once v2 is
+multi-groomer (§8.7) — makes "who changed this" answerable. Schema: an
+edit-history / `audit_events` table (§6). First cut = capture the data plus a
+simple per-record "recent changes" list; a rich diff timeline can come later.
 
-Important edits are recorded: **who, when, old value → new value.** "Important"
-means safety fields (allergies, allergies_detail, vaccination_status,
-medical_notes), identity and contact fields (names, phone), financial fields
-(fee, tip, standard_fee), appointment status and date, and archive / un-archive
-actions. Routine note edits need not be audited.
-
-Why: a correction trail catches mistakes, lets Samantha undo a bad edit (revert
-to the prior value), and — once v2 is multi-groomer (§8.7) — makes "who changed
-this" answerable.
-
-Schema implication (§6): an edit-history / `audit_events` table — entity type,
-entity id, field, old value, new value, `edited_by` (= `auth.uid()`),
-`edited_at`. Design-lock spec §3.6 floated an *optional* `audit_events` table;
-this section makes it **recommended, not optional**, for the edit workflow. It is
-feature schema and ships as its own migration, separate from the Ship 2.2
-security migration, per the ratified scope.
-
-First cut vs later: v1 of audit is *capturing* the data plus a simple per-record
-"recent changes" list. A rich visual diff timeline can come later.
-
-### 8.6 "Unknown for now" handling for incomplete fields
+### 8.6 "Unknown for now" handling
 
 Most schema columns are nullable — good, because Samantha often will not have
-every field. v2 must treat missing data as a **normal state, not an error**:
+every field yet. v2 treats missing data as a **normal state, not an error**:
 
-- An empty field shows as "Not set" / "Unknown" — never a fabricated default,
-  never a blank that reads like a zero.
-- **Sharp case: `pets.allergies` is a boolean defaulting to `false`.** Today
-  "false" means "no allergies recorded" — which is *not* the same as "nobody has
-  checked." Surfacing "Allergies: No" for a dog nobody asked about is a safety
-  trap. v2 needs to let Samantha distinguish "no known allergies" from "unknown /
-  not yet asked." This needs a schema decision — a third state or a companion
-  "allergies confirmed" flag — flagged in §6.
-- New records (§8.2) save with only known fields; the rest stay "unknown for
-  now."
-- v2 may *gently* surface a missing field that matters (a soft prompt on a pet
-  whose vaccination_status is unknown) — but it never blocks a save.
+- An empty field shows as "Not set" — never a fabricated default.
+- **`pets.allergies` — three real states.** Samantha's paper practice (note
+  allergies only if there's something to worry about) maps to: **flagged** /
+  **checked, nothing to flag** / **not yet asked**. The schema's
+  `boolean default false` collapses the last two, so a dog nobody asked about
+  reads as a confident "Allergies: No" — a safety trap. v2 must distinguish them
+  (§6.2). New-dog intake (§7 Flow 5) **prompts** for allergies and offers "no
+  known allergies" as an explicit, pickable answer.
+- New records save with only known fields; the rest stay "unknown for now."
+- v2 may gently surface a missing field that matters (a soft prompt on a pet with
+  unknown vaccination status) — it never blocks a save.
 
-This is the no-fabrication discipline applied to the UI: the app must not invent
-a value to fill a gap, and must not pressure Samantha to.
+This is the no-fabrication discipline in the UI: the app does not invent a value
+to fill a gap, and does not pressure Samantha to.
 
 ### 8.7 Role and auth assumptions
 
-- Samantha authenticates via real Supabase Auth (Ship 2.2a / milestone M1) and
-  can view and edit **every record in her own book**.
-- The data model is single-groomer today. The Ship 2.2 security migration adds
-  `groomer_id` to the core tables and scopes RLS to `auth.uid()`.
-- **Future multi-groomer** (the licensing possibility in CLAUDE.md — far out, not
-  now): the edit model is *a groomer can edit only their own book* — their own
-  clients, pets, and appointments. This is enforced at the database by the
-  `auth.uid()` RLS scoping, not merely in the UI. No groomer edits another's
-  records; there is no shared-edit and no admin-edits-everyone role unless a real
-  multi-tenant admin role is separately designed.
-- Inline editing is built on top of real auth — it is **not** enabled in any
-  pre-auth state. Edit history (§8.5) records `edited_by` as the authenticated
-  user, which is what makes the multi-groomer "only your own book" model
-  auditable.
+- Samantha authenticates via real Supabase Auth (Ship 2.2a / M1) and can view and
+  edit **every record in her own book**.
+- The data model is single-groomer today. The Ship 2.2 migration adds
+  `groomer_id` and scopes RLS to `auth.uid()`.
+- **Future multi-groomer** (the CLAUDE.md licensing possibility — far out): a
+  groomer edits only their own book, enforced by `auth.uid()` RLS at the
+  database, not just the UI. No shared-edit, no admin-edits-everyone, unless a
+  real multi-tenant admin role is separately designed.
+- Inline editing is built on real auth — not enabled pre-auth. Edit history
+  (§8.5) records `edited_by` as the authenticated user.
 
-### 8.8 Acceptance criteria — Sam fixes a bad record herself
+### 8.8 Acceptance criteria — Sam keeps the digital book current herself
 
-The bar: Samantha can correct a wrong record end-to-end inside v2, with **no
-Russell, no SQL, no agent**.
+The bar: Samantha can keep her digital book current end-to-end inside v2, with
+**no Russell, no SQL, no agent**.
 
-1. From a client, pet, or appointment detail screen, Samantha can change any
-   displayed field and save it, in under a minute, without leaving the screen.
-2. She can add a missing client, a missing pet, and a missing appointment,
-   supplying only the fields she knows.
-3. She can archive a record she should no longer see; its history is preserved
+1. From a client, pet, or appointment screen, she can change any displayed field
+   and save it, in under a minute, without leaving the screen.
+2. She can add a new client, a new pet, and a new appointment, supplying only the
+   fields she knows.
+3. She can archive a record she no longer needs to see; its history is preserved
    and the record is recoverable in one tap.
 4. She never encounters a hard-delete action; nothing in the edit flow is
    irreversible without a clear, effect-naming confirmation.
-5. A high-risk change — a safety field, archiving a client with dependents,
-   contact info — shows a confirmation that names the consequence before it
+5. A high-risk change shows a confirmation that names the consequence before it
    commits.
-6. An important edit (safety, identity, financial, status) is recorded in
-   history with old → new values and can be reverted.
+6. An important update is recorded in history with old → new values and can be
+   reverted.
 7. A field she has no data for can be left, or marked "unknown," without blocking
    the save.
-8. Concretely: given a real known-bad record — a misspelled pet name, a wrong
-   phone number, a fee typo from the contact-card reconciliation — Samantha fixes
-   it in v2 herself, and future corrections of this kind no longer need an agent.
-   (Merge-class corrections — two records that are really one — remain assisted;
-   see the §8 scope note.)
+8. Concretely: a dog moved, a client has a new phone, a new puppy joined a
+   household — Samantha enters or updates it in v2 herself, in the moment.
+   (Merge-class changes — two records that are really one — remain assisted; see
+   the §8 scope note.)
 
 ---
 
-## §9 — Milestone plan: scaffold → usable daily app
+## §9 — Milestone plan: scaffold → working guided scheduler
 
 | Milestone | Delivers | Gate / dependency |
 |---|---|---|
 | **M0 — Read-only scaffold** | Done. Directory, history, lapsed view, revenue — read-only. | Shipped (Ship 2.1, commit `2e9a5cb`). |
-| **M1 — Operator auth** | Real Supabase Auth login; v2 is a private operator tool. | Ship 2.2a (app-side auth, buildable now against permissive DB). |
-| **M2 — Log a completed groom** | Flow 4. First write path. **No migration** — `status` enum exists. | M1. Working backup path (see §11). |
-| **M3 — Today view + record/edit appointment** | Flows 1 and 2. **No migration** for the appointment record itself. | **Q-A1, Q-A3, Q-A4, Q-A5 answered.** `blocked_dates` table (Q-A1). |
-| **M4 — Care flags surfaced** | Flow 5. Surfaces existing `pets` fields. **No migration.** | Q-B5. |
-| **M5 — Rebooking + lapsed clients** | Flows 3 and 6. Uses `preferred_frequency_weeks`. **No migration.** | Q-A6, Q-B4. |
-| **M6 — RLS security cutover** | Ship 2.2b flag-day cutover; R-1 closed; v2 is live source of truth. | All feature ships landed; fresh backup; per Ship 2.2 plan. |
+| **M1 — Operator auth** | Real Supabase Auth login; v2 is a private operator tool. | Ship 2.2a (buildable now against the permissive DB). |
+| **M2 — Log a completed groom + inline editing foundation** | Flow 4 and the §8 "keep the book current" base (inline edit, add-missing). **No migration** for the core writes. | M1. Working backup path (§11). |
+| **M3 — Today + upcoming schedule** | Flow 1 — v2 holds and shows Sam's schedule of record. **No migration** for the appointment record. | Group A answered ✓ (R2 daily-hours can default). |
+| **M4 — Manual appointment create/edit + recurring availability + care flags** | Flows 2 and 5; the recurring weekly pattern + date-exceptions. v2 is now the scheduling source of truth. | Availability/locations schema (§6.1); R3 clarified. |
+| **M5 — Guided scheduling warnings** | The soft warnings layer — capacity, large-dog runs, crate, duration, temperament, location (§4). | M4; capacity/duration schema (§6.1); R1. |
+| **M6 — Reminders + rebooking** | Flows 3 and 6; due/overdue + rebook + lapsed surfaces. | R4 (dispatch vs surface). |
+| **M7 — RLS security cutover** | Ship 2.2b flag-day cutover; R-1 closed; v2 is the live, secured source of truth. | All feature ships landed; fresh backup; per the Ship 2.2 plan. |
 
-**Sequencing notes.** Most milestones need **no schema migration** — the
-existing tables already carry the columns. M1 can start now. M2 is the smallest
-write and proves the write path. M3 is the first milestone *gated on Sam's
-answers* (Q-A1/A3/A4/A5) and the only feature milestone that adds a table
-(`blocked_dates`). M6 is deliberately last, per the ratified flag-day decision:
-the security migration runs only after v2 is a complete tool.
+**Sequencing notes.** M1 can start now. M2 proves the write path and starts the
+"keep the book current" workflow. M3–M4 are the guided scheduler's spine — v2
+*becomes the book*. M5 layers guidance on top, governed by the §4
+over-automation principle. M7 is deliberately last, per the ratified flag-day
+decision: the security migration runs only after v2 is a complete tool. The
+residual follow-ups R1–R4 attach to specific milestones (noted above) but do not
+block starting M1–M3.
+
+**One-time onboarding.** At or before M3, Samantha's current set of *upcoming*
+appointments must be loaded into v2's `appointments` table so the schedule is
+complete on day one (§11).
 
 ---
 
@@ -807,93 +860,95 @@ the security migration runs only after v2 is a complete tool.
 
 **Functional — v2 must let Sam, in one place:**
 
-1. Log in as herself; no one else can see her data (post-M6: RLS-enforced).
-2. Open the app in the morning and see the day's appointments in order, by
-   location.
-3. Record a new appointment she has agreed to, in under a minute.
+1. Log in as herself; no one else can see her data (post-M7: RLS-enforced).
+2. Open the app and see today's schedule, and her upcoming schedule, in order by
+   location — this is her schedule of record, not a mirror.
+3. **Create and edit upcoming appointments in Tidy Tails** — booking, moving, and
+   cancelling appointments in v2, with guided warnings that explain and never
+   silently block (§4).
 4. Open a dog and immediately see its care flags — allergies, vaccine status,
    behavior — without searching.
 5. Mark a groom complete and leave a note that shows up next visit.
 6. Rebook a dog with a sensible suggested return date.
-7. See which clients have lapsed and reach out.
-8. Never encounter a fabricated number — every duration, interval, or cap shown
-   is either read from real data or entered/confirmed by Sam.
+7. See which owners need an appointment reminder, which clients to prompt for a
+   rebook, and which have lapsed.
+8. Never encounter a fabricated number — every duration, capacity signal, or
+   interval shown is read from real data or entered/confirmed by Sam.
 
 **Lived-adoption — the criterion that actually proves it (mirrors design-lock
 §7.4):**
 
 9. Across a defined window (the post-cutover watch week, minimum five working
-   days), Samantha chose v2 to run those days — opening it each morning, logging
-   her grooms in it — **without falling back to v1's HTML modules, a paper book,
-   or Pawfinity for the cockpit functions** (today view, groom logging, care
-   flags). A feature-complete app Sam does not actually reach for has not met
-   acceptance.
+   days), Samantha **runs both her day and her upcoming schedule from v2** —
+   opening it each morning, scheduling and logging in it — **without falling back
+   to v1's HTML modules, a paper book, or any other calendar.** A feature-complete
+   app Sam does not actually reach for has not met acceptance.
 
 Criterion 9 is the real bar. Criteria 1–8 are necessary; 9 is sufficient.
 
-Data correction has its own acceptance criteria in §8.8 — Samantha fixing a bad
-record herself, with no Russell, SQL, or agent. v2 is not "a working app for
-Sam" unless both this section's criteria and §8.8's pass.
+Keeping the digital book current has its own acceptance criteria in §8.8. v2 is
+not "a working app for Sam" unless both this section's criteria and §8.8's pass.
 
 ---
 
 ## §11 — Open items and dependencies
 
-- **Q-A1–A6 unanswered.** M3 and beyond are blocked until Sam answers Group A.
-  These should go to Samantha as one short batch, framed as her workflow.
-- **Q-A4 — appointments-vs-Pawfinity relationship.** The single biggest unknown.
-  Until answered, the today-view milestone (M3) cannot be safely scoped.
-- **Pawfinity export path unconfirmed.** This PRD does **not** establish that
-  Pawfinity lacks a machine-readable export (CSV / ICS / API) — the recon docs
-  speak to scheduling *ownership*, not export *availability*. If Q-A4 reveals
-  Pawfinity holds the live schedule, whether it can export to feed Tidy is a
-  separate item worth a short Codex check before M3.
-- **`appointments` row count.** `list_tables` returned a stale `0` estimate for
-  `appointments` (clients/pets/sam_review estimates were accurate). The
-  authoritative count is **730**, per the Phase 2 execution report's explicit
-  `count(*)` on 2026-05-16. An exact recount — and a check of how many rows are
-  future-dated — is a one-query read-only step worth running before M3 scoping.
+- **Residual follow-ups R1–R4 (§5).** Service list, daily hours, annette/gina
+  row meaning, reminder dispatch-vs-surface. Small; attach to M4–M6; do not block
+  starting the build.
+- **One-time appointment onboarding.** v2 is now the schedule of record — at/before
+  M3, Sam's current *upcoming* appointments must be loaded into v2's
+  `appointments` table. Decide the mechanism (manual entry by Sam, a one-time
+  import) when M3 is scoped.
+- **`appointments` row count.** `list_tables` returned a stale `0` estimate
+  (clients/pets/sam_review estimates were accurate). Authoritative count is
+  **730** per the Phase 2 execution report's explicit `count(*)` (2026-05-16).
+  An exact recount, plus a count of future-dated rows, is a one-query read-only
+  step worth running before M3 scoping.
 - **`venture-ops/dump_supabase.py` still missing.** The documented backup script
   does not exist on disk (REQ-17). Every write milestone (from M2) needs a
   working backup path; close this before M2.
-- **Phase 4 enrichment overlap.** Structured pet fields (§3.3) overlap with the
-  queued Codex enrichment work — coordinate so the two do not collide.
-- **Landry/Laundry data question.** 4 rows at 705-796-0620 still pending Sam's
+- **Phase 4 enrichment overlap.** Structured pet fields (§3.3, §6) overlap with
+  the queued Codex enrichment work — coordinate so the two do not collide.
+- **Landry/Laundry data question.** 4 rows at 705-796-0620 pending Sam's
   Cash-vs-Charlotte answer (`v1-active-bugs.md` B4) — unrelated to scheduling but
   affects directory correctness.
-- **§4 graduation gate** has its first scheduled evaluation at the end of the
-  post-cutover watch week; log the outcome in `docs/DECISIONS.md`.
+- **docs/DECISIONS.md entry recommended.** The §1 scope change (v2 as scheduling
+  source of truth) is a real decision that supersedes design-lock §8's "do not
+  build scheduling." It should be logged in `docs/DECISIONS.md`. Not done in this
+  pass — flagged for Russell.
 
 ---
 
-## §12 — PRD review notes (2026-05-16 checkpoint)
+## §12 — PRD review notes (2026-05-16 — Group A checkpoint)
 
-A checkpoint pass on this PRD. Standing guardrails for anyone picking up the v2
-build:
+This revision incorporates Samantha's 2026-05-16 Group A answers. Standing notes
+for anyone picking up the v2 build:
 
-- **v2 remains a scheduling-*aware* cockpit, not a full scheduler.** §1 and §4
-  hold. The "Not Yet: Full Scheduler" boundary and the graduation gate (§4) are
-  the only route to a wider scope, and only Russell can open that gate.
-- **No code starts past the current read-only scaffold until §5 Group A is
-  answered — or Russell explicitly chooses defaults in Samantha's place.** The
-  app-side auth work (M1 / Ship 2.2a) and read-only polish are the only build
-  activity safe to proceed on now; M3 onward is gated on Sam's answers. A
-  Samantha-facing question sheet for Group A is at
-  `_reports/2026-05-16-sam-scheduling-questions.md`.
-- **The existing schema already supports most cockpit writes** — logging a
-  groom, recording an appointment, editing records (§6, §8) — **but the live row
-  count and table statistics should be verified before M3 is scoped.**
-  `list_tables` returned a stale `0` estimate for `appointments`; the
-  authoritative count is 730 (§11). Re-confirm with an exact `count(*)` and a
-  future-dated-rows check before committing M3 scope.
-- **Added at this checkpoint:** §8 (data correction as a first-class workflow)
-  and these review notes. The original §8/§9/§10 were renumbered to §9/§10/§11.
+- **Scope changed.** v2 is no longer a scheduling-*aware* cockpit — it is the
+  **scheduling source of truth** for Sam's upcoming appointments, built as a
+  **phased guided scheduler** (§1, §4). This supersedes design-lock §8 and is a
+  deliberate, operator-driven scope change; a `docs/DECISIONS.md` entry is
+  recommended (§11).
+- **Not a generic full scheduler.** The phasing (M3–M4 spine, M5 guidance, M6
+  reminders) and the "do not over-automate Sam's judgment" principle (§4) are
+  load-bearing. v2 warns and explains; it hard-blocks only genuine
+  impossibilities. Online client self-booking and automated dispatch stay out.
+- **Group A is answered; R1–R4 remain.** The residual follow-ups are small and do
+  not block starting M1–M3, but should be cleared before the milestones that
+  depend on them.
+- **The schema already supports the core writes** (logging, scheduling, editing
+  — §6); the new feature schema is the scheduling-rules model (§6.1). The live
+  row count should still be verified before M3 (§11).
+- **Language.** Sam's framing, not the builder's: "digital book," "keep current,"
+  "schedule," "reminder/rebook." Not "bad records" or "data correction" — Sam
+  does not see her cards as wrong; v2 digitized a paper system and now keeps it
+  current.
 
 ---
 
 *Generated by CC 2026-05-16. PRD/spec work only — no code written, no Supabase
-mutated (the schema was read read-only via `list_tables`). The scheduling domain
-(§3) is grounded in the live schema and tagged KNOWN/UNKNOWN; §5 routes every gap
-to a question for Samantha. Nothing marked UNKNOWN may be built against until she
-answers. KoyaOS dogfood lessons from producing this PRD are captured separately
-in `_reports/2026-05-16-koyaos-dogfood-sam-scheduling-os-prd.md`.*
+mutated (the schema was read read-only via `list_tables`). Updated from
+Samantha's 2026-05-16 Group A answers (relayed by Russell); her answers and the
+interpretation are in `_reports/2026-05-16-sam-scheduling-answers.md`. KoyaOS dogfood lessons are in
+`_reports/2026-05-16-koyaos-dogfood-sam-scheduling-os-prd.md`.*
