@@ -4,6 +4,7 @@ import { AddAppointment } from "@/components/AddAppointment";
 import { AppointmentHistory } from "@/components/AppointmentHistory";
 import { BackLink } from "@/components/BackLink";
 import { ClientActions } from "@/components/ClientActions";
+import { LogGroom } from "@/components/LogGroom";
 import { PetCard } from "@/components/PetCard";
 import { dataMode, getClientRecord, loadVaccinations } from "@/lib/data/repo";
 import { lastAppointment } from "@/lib/derive";
@@ -59,6 +60,7 @@ export default async function ClientDetailPage({
 
       <div className="mt-4 flex flex-col gap-2.5">
         <AddAppointment client={client} pets={pets} mode={dataMode()} />
+        <LogGroom client={client} pets={pets} mode={dataMode()} />
         <ClientActions client={client} pets={pets} />
       </div>
 
