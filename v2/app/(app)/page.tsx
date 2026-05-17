@@ -46,7 +46,7 @@ export default async function HomePage() {
   return (
     <main className="px-4 py-5">
       <header className="mb-4">
-        <h1 className="text-xl font-bold text-ink">Tidy Tails</h1>
+        <h1 className="text-xl font-bold text-ink">Find a household</h1>
         <p className="text-sm text-ink-soft">
           Search a name, phone, or pet to pull up the right household.
         </p>

@@ -1,3 +1,4 @@
+import { AppHeader } from "@/components/AppHeader";
 import { BottomNav } from "@/components/BottomNav";
 import { DataModeBanner } from "@/components/DataModeBanner";
 
@@ -11,6 +12,7 @@ export default function AppLayout({
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-canvas">
       <DataModeBanner />
+      <AppHeader />
       <div className="flex-1 pad-bottom-nav">{children}</div>
       <BottomNav />
     </div>
