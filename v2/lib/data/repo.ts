@@ -1,14 +1,20 @@
-// Data access layer for Tidy Tails v2 Ship 2.1.
+// Data access layer for Tidy Tails v2.
 //
 // This is the ONLY place the app reads data. Everything here is read-only:
 //   - default: anonymized fixtures bundled in fixtures.ts
 //   - opt-in (NEXT_PUBLIC_USE_LIVE_DATA=on): SELECT-only reads from live Supabase
 //
-// There is no write path in this ship. Swapping fixtures for live data is a
-// change confined to this file — pages and components never know the difference.
+// The live path reads through the auth-aware server Supabase client (Ship
+// 2.2a) — the same session client that gates every route — so reads carry the
+// signed-in operator's identity. That is inert under today's permissive RLS
+// and forward-compatible with the Ship 2.2b cutover to auth.uid()-scoped
+// policies. Row shaping is done by the pure mappers in live.ts.
+//
+// There is no write path in this app — only `.select()` is ever called.
 //
 // Intended for use by Server Components only.
 
+import { createServerSupabase } from "../supabase/server";
 import type { Appointment, Client, ClientRecord, Pet, Vaccination } from "./types";
 import {
   FIXTURE_APPOINTMENTS,
@@ -16,6 +22,13 @@ import {
   FIXTURE_PETS,
   FIXTURE_VACCINATIONS,
 } from "./fixtures";
+import {
+  fetchAllRows,
+  mapAppointmentRow,
+  mapClientRow,
+  mapPetRow,
+  type Row,
+} from "./live";
 
 export type DataMode = "fixtures" | "live";
 
@@ -23,77 +36,40 @@ export function dataMode(): DataMode {
   return process.env.NEXT_PUBLIC_USE_LIVE_DATA === "on" ? "live" : "fixtures";
 }
 
-type Row = Record<string, unknown>;
-const str = (v: unknown): string => (typeof v === "string" ? v : v == null ? "" : String(v));
-const strOrNull = (v: unknown): string | null => (typeof v === "string" && v !== "" ? v : null);
-const numOrNull = (v: unknown): number | null => (typeof v === "number" ? v : null);
-
 // ---- live reads (SELECT only) -------------------------------------------------
-// `select("*")` is used deliberately: it is read-only and cannot fail on a
-// column-name mismatch. v2-only columns absent from live v1 map to null.
+// Reads page through fetchAllRows so a table larger than the PostgREST row cap
+// (Supabase default: 1000) is never silently truncated — `appointments` is the
+// table that will cross that cap first. Rows are ordered by `id` so the paged
+// ranges are deterministic; the app re-sorts for display regardless.
 
 async function liveSelect(table: string): Promise<Row[]> {
-  const { getReadOnlySupabase } = await import("./supabase");
-  const { data, error } = await getReadOnlySupabase().from(table).select("*");
-  if (error) throw new Error(`Live read failed (${table}): ${error.message}`);
-  return (data ?? []) as Row[];
-}
-
-async function liveClients(): Promise<Client[]> {
-  return (await liveSelect("clients")).map((r) => ({
-    id: str(r.id),
-    first_name: str(r.first_name),
-    last_name: str(r.last_name),
-    phone: str(r.phone),
-    alt_contact: strOrNull(r.alt_contact),
-    email: strOrNull(r.email),
-    notes: strOrNull(r.notes),
-    created_at: str(r.created_at),
-  }));
-}
-
-async function livePets(): Promise<Pet[]> {
-  return (await liveSelect("pets")).map((r) => ({
-    id: str(r.id),
-    client_id: str(r.client_id),
-    name: str(r.name),
-    breed: strOrNull(r.breed),
-    color: strOrNull(r.color),
-    sex: r.sex === "M" || r.sex === "F" ? r.sex : null,
-    date_of_birth: strOrNull(r.date_of_birth),
-    allergies: r.allergies === true,
-    allergies_detail: strOrNull(r.allergies_detail),
-    grooming_notes: strOrNull(r.grooming_notes),
-    typical_fee: numOrNull(r.typical_fee),
-    created_at: str(r.created_at),
-  }));
-}
-
-async function liveAppointments(): Promise<Appointment[]> {
-  return (await liveSelect("appointments")).map((r) => ({
-    id: str(r.id),
-    client_id: str(r.client_id),
-    pet_id: str(r.pet_id),
-    date: str(r.date).slice(0, 10),
-    service: str(r.service),
-    price: typeof r.price === "number" ? r.price : Number(r.price) || 0,
-    notes: strOrNull(r.notes),
-    created_at: str(r.created_at),
-  }));
+  const supabase = await createServerSupabase();
+  return fetchAllRows(async (from, to) => {
+    const { data, error } = await supabase
+      .from(table)
+      .select("*")
+      .order("id", { ascending: true })
+      .range(from, to);
+    if (error) throw new Error(`Live read failed (${table}): ${error.message}`);
+    return (data ?? []) as Row[];
+  });
 }
 
 // ---- public load functions ---------------------------------------------------
 
 export async function loadClients(): Promise<Client[]> {
-  return dataMode() === "live" ? liveClients() : FIXTURE_CLIENTS;
+  if (dataMode() !== "live") return FIXTURE_CLIENTS;
+  return (await liveSelect("clients")).map(mapClientRow);
 }
 
 export async function loadPets(): Promise<Pet[]> {
-  return dataMode() === "live" ? livePets() : FIXTURE_PETS;
+  if (dataMode() !== "live") return FIXTURE_PETS;
+  return (await liveSelect("pets")).map(mapPetRow);
 }
 
 export async function loadAppointments(): Promise<Appointment[]> {
-  return dataMode() === "live" ? liveAppointments() : FIXTURE_APPOINTMENTS;
+  if (dataMode() !== "live") return FIXTURE_APPOINTMENTS;
+  return (await liveSelect("appointments")).map(mapAppointmentRow);
 }
 
 export async function loadVaccinations(): Promise<Vaccination[]> {

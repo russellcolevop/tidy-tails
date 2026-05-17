@@ -36,8 +36,8 @@ export type Appointment = {
   client_id: string;
   pet_id: string;
   date: string; // ISO date (YYYY-MM-DD)
-  service: string;
-  price: number;
+  service: string | null; // null when the live row has no service_type (e.g. backfills)
+  price: number | null; // null when the live row has no fee recorded
   notes: string | null;
   created_at: string;
 };

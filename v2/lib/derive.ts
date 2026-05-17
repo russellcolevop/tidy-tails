@@ -25,14 +25,16 @@ export function daysSinceLastVisit(appointments: Appointment[]): number | null {
 /**
  * The service a pet usually gets — the most frequently booked one. A frequency
  * tie is broken toward the service on the most recent appointment, so "usual"
- * tracks what Sam is doing lately. Null when there is no history.
+ * tracks what Sam is doing lately. Appointments with no recorded service are
+ * skipped; null when none of the history records a service.
  */
 export function usualService(appointments: Appointment[]): string | null {
-  if (appointments.length === 0) return null;
+  const known = appointments.filter((a) => a.service != null);
+  if (known.length === 0) return null;
 
   const counts = new Map<string, number>();
-  for (const a of appointments) {
-    counts.set(a.service, (counts.get(a.service) ?? 0) + 1);
+  for (const a of known) {
+    counts.set(a.service!, (counts.get(a.service!) ?? 0) + 1);
   }
   const max = Math.max(...counts.values());
   const topServices = new Set(
@@ -41,8 +43,8 @@ export function usualService(appointments: Appointment[]): string | null {
   if (topServices.size === 1) return [...topServices][0];
 
   // Tie: pick the tied service seen on the most recent appointment.
-  for (const a of sortByDateDesc(appointments)) {
-    if (topServices.has(a.service)) return a.service;
+  for (const a of sortByDateDesc(known)) {
+    if (a.service != null && topServices.has(a.service)) return a.service;
   }
   return null; // unreachable — topServices is non-empty
 }
@@ -50,12 +52,16 @@ export function usualService(appointments: Appointment[]): string | null {
 /**
  * The price a pet's groom usually costs — the median of past prices. Median,
  * not average or most-recent, so a one-off high or low charge does not skew the
- * figure Sam quotes on a call. Null when there is no history.
+ * figure Sam quotes on a call. Appointments with no recorded price are skipped;
+ * null when none of the history records a price.
  */
 export function usualPrice(appointments: Appointment[]): number | null {
-  if (appointments.length === 0) return null;
+  const prices = appointments
+    .map((a) => a.price)
+    .filter((p): p is number => p != null)
+    .sort((x, y) => x - y);
+  if (prices.length === 0) return null;
 
-  const prices = appointments.map((a) => a.price).sort((x, y) => x - y);
   const mid = Math.floor(prices.length / 2);
   return prices.length % 2 === 0
     ? (prices[mid - 1] + prices[mid]) / 2
@@ -117,18 +123,23 @@ export type RevenueSummary = {
   average: number;
 };
 
-/** Totals for appointments whose date falls within [from, to] inclusive. */
+/**
+ * Totals for appointments whose date falls within [from, to] inclusive.
+ * `count` is every visit in the window; `gross` and `average` use only the
+ * visits that have a recorded price, so a fee-less row never reads as $0.
+ */
 export function revenueInRange(
   appointments: Appointment[],
   from: string,
   to: string,
 ): RevenueSummary {
   const inRange = appointments.filter((a) => a.date >= from && a.date <= to);
-  const gross = inRange.reduce((sum, a) => sum + a.price, 0);
+  const priced = inRange.filter((a) => a.price != null);
+  const gross = priced.reduce((sum, a) => sum + (a.price ?? 0), 0);
   return {
     count: inRange.length,
     gross,
-    average: inRange.length ? gross / inRange.length : 0,
+    average: priced.length ? gross / priced.length : 0,
   };
 }
 

@@ -18,7 +18,11 @@ function Row({
             <span className="font-normal text-ink-soft"> · {petName}</span>
           ) : null}
         </p>
-        <p className="truncate text-sm text-ink-soft">{appointment.service}</p>
+        {appointment.service ? (
+          <p className="truncate text-sm text-ink-soft">{appointment.service}</p>
+        ) : (
+          <p className="truncate text-sm text-ink-faint">Service not recorded</p>
+        )}
       </div>
       <span className="shrink-0 text-sm font-semibold text-ink">
         {formatMoney(appointment.price)}
@@ -41,7 +45,9 @@ export function AppointmentHistory({
   }
 
   const sorted = sortByDateDesc(appointments);
-  const total = sorted.reduce((sum, a) => sum + a.price, 0);
+  // Skip fee-less visits so the all-time total never reads low by treating an
+  // unrecorded fee as $0.
+  const total = sorted.reduce((sum, a) => sum + (a.price ?? 0), 0);
   const head = sorted.slice(0, 10);
   const rest = sorted.slice(10);
 

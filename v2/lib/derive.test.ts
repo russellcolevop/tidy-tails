@@ -1,11 +1,22 @@
 import { describe, it, expect } from "vitest";
 import type { Appointment } from "./data/types";
-import { lastAppointment, usualPrice, usualService } from "./derive";
+import {
+  lastAppointment,
+  revenueInRange,
+  usualPrice,
+  usualService,
+} from "./derive";
 
 // Minimal Appointment builder — only the fields these helpers read matter.
-function appt(date: string, service: string, price: number): Appointment {
+// service / price accept null: live rows (e.g. backfills) can lack either.
+let apptSeq = 0;
+function appt(
+  date: string,
+  service: string | null,
+  price: number | null,
+): Appointment {
   return {
-    id: `a-${date}-${service}-${price}`,
+    id: `a-${apptSeq++}`,
     client_id: "c",
     pet_id: "p",
     date,
@@ -64,6 +75,20 @@ describe("usualService — most common service", () => {
     ];
     expect(usualService(list)).toBe("Full groom");
   });
+
+  it("ignores appointments with no recorded service", () => {
+    const list = [
+      appt("2026-01-01", null, 60),
+      appt("2026-02-01", null, 60),
+      appt("2026-03-01", "Full groom", 80),
+    ];
+    expect(usualService(list)).toBe("Full groom");
+  });
+
+  it("returns null when no appointment has a recorded service", () => {
+    const list = [appt("2026-01-01", null, 60), appt("2026-02-01", null, 60)];
+    expect(usualService(list)).toBeNull();
+  });
 });
 
 describe("usualPrice — typical price (median)", () => {
@@ -101,5 +126,53 @@ describe("usualPrice — typical price (median)", () => {
       appt("2026-05-01", "Full groom", 500),
     ];
     expect(usualPrice(list)).toBe(74);
+  });
+
+  it("ignores appointments with no recorded price", () => {
+    const list = [
+      appt("2026-01-01", "Full groom", null),
+      appt("2026-02-01", "Full groom", 70),
+      appt("2026-03-01", "Full groom", 90),
+      appt("2026-04-01", "Full groom", null),
+      appt("2026-05-01", "Full groom", 80),
+    ];
+    expect(usualPrice(list)).toBe(80); // median of [70, 80, 90]
+  });
+
+  it("returns null when no appointment has a recorded price", () => {
+    const list = [
+      appt("2026-01-01", "Full groom", null),
+      appt("2026-02-01", "Full groom", null),
+    ];
+    expect(usualPrice(list)).toBeNull();
+  });
+});
+
+describe("revenueInRange — totals over a date window", () => {
+  it("sums gross, counts visits, and averages over the window", () => {
+    const list = [
+      appt("2026-04-15", "Full groom", 80),
+      appt("2026-04-20", "Full groom", 100),
+      appt("2026-06-01", "Full groom", 999), // outside the window
+    ];
+    expect(revenueInRange(list, "2026-04-01", "2026-04-30")).toEqual({
+      count: 2,
+      gross: 180,
+      average: 90,
+    });
+  });
+
+  it("skips null prices in gross but still counts the visit", () => {
+    const list = [
+      appt("2026-04-10", "Full groom", 80),
+      appt("2026-04-12", null, null), // a visit with no fee recorded
+      appt("2026-04-14", "Full groom", 100),
+    ];
+    // gross sums the 2 priced visits; count is all 3; average is over the priced.
+    expect(revenueInRange(list, "2026-04-01", "2026-04-30")).toEqual({
+      count: 3,
+      gross: 180,
+      average: 90,
+    });
   });
 });
