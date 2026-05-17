@@ -65,3 +65,19 @@
 **Alternatives considered:**
 - Single bundled migration per spec §3.6 (rejected on ratification: a larger migration surface makes the security-critical rollback riskier; no offsetting benefit).
 
+## [2026-05-16] v2 is the scheduling source of truth; the immediate wedge is fast lookup → confident booking
+
+**Decision:** Two linked, operator-driven product decisions from the same 2026-05-16 conversation, logged together.
+
+(1) **v2 owns the schedule.** Tidy Tails v2 is the source of truth for Samantha's upcoming appointments — not a mirror of a paper book or phone calendar. Samantha opted into this directly in her 2026-05-16 Group A answers (Q-A4). v2 is built as a *phased guided scheduler*: it holds and shows her schedule, lets her create and edit appointments, and later adds soft capacity/duration warnings. This supersedes design-lock spec §8 ("do not build online booking / calendar / scheduling").
+
+(2) **The immediate build wedge is fast lookup, not scheduling automation.** Per a 2026-05-16 follow-up correction from Russell and Samantha, the first product win is fast client/pet retrieval the moment a client calls or texts — **Call/Text → Identify Client/Pet → Book Confidently.** Milestone M3 delivers search by phone / owner first-or-last name / pet name, fuzzy and partial matching, common-pet-name disambiguation, and household cards (pets, last visit, usual service, usual price/duration, notes) that let Samantha book from the identified household without re-asking for information already in the app. The schedule-of-record view, recurring-availability model, and guided capacity warnings remain in scope but follow the wedge (M4–M6); the warnings layer is advisory, not load-bearing.
+
+**Rationale:** (1) Samantha was asked plainly whether Tidy should own her schedule and said yes; an operator opting into source-of-truth ownership is a real decision and is logged so any agent picking up the build sees it was decided, not slipped in. (2) Samantha told us scheduling *judgment* is not her hard problem — she is good at deciding what fits a day. Her immediate pain is retrieval and context: getting the right household and its history in front of her fast enough to book on the call. Sequencing the fast-lookup wedge ahead of the scheduling-intelligence layer puts the most frequent operator win first and keeps each phase shippable.
+
+**Alternatives considered:**
+- v2 as a scheduling-*aware* cockpit that does not own a calendar (the prior stance, anchored to design-lock §8 and the Pawfinity recon) — rejected: Samantha explicitly asked for source-of-truth ownership.
+- Lead v2 with the guided-scheduler intelligence (capacity, duration, warnings) — rejected: that is the sophisticated-but-secondary part; the operator's actual job-to-be-done is fast retrieval, and leading with scheduling math would polish the wrong surface first.
+
+**Related:** PRD `_reports/2026-05-16-sam-scheduling-os-prd.md` §1 / §1.1 / §9 / §10; answers artifact `_reports/2026-05-16-sam-scheduling-answers.md`; supersedes design-lock spec (`_reports/2026-05-15-v2-design-lock-spec.md`) §8.
+

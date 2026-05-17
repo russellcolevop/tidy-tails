@@ -173,6 +173,44 @@ KoyaOS dogfood lesson (REQ-25).
 
 ---
 
+## Follow-up correction (2026-05-16) — tighten the immediate wedge
+
+This was not one of the six Group A questions. After the Group A answers were
+folded into the PRD, Russell relayed one more product correction from himself
+and Samantha.
+
+**The correction.** Keep the decision that v2 is Samantha's digital source of
+truth for upcoming appointments — but tighten the *immediate* wedge. The first
+product win is **not** complex scheduling automation. It is **fast lookup the
+moment a client calls or texts.** Samantha wants to type a client name, a phone
+number, a pet name, or a partial clue and instantly pull up the right
+household / pet — so she can book without digging through cards or asking repeat
+clients questions she should already know.
+
+Example: a client says "Bella," or a text arrives from a phone number. Samantha
+needs to see at a glance which Bella / which owner, the phone, the household's
+pets, last visit, usual service, usual price / duration if known, allergies and
+special notes — enough context to book confidently.
+
+**Interpretation.** The actual job to be done is **retrieval and context**, not
+scheduling math. Samantha said scheduling *judgment* itself is not hard — she is
+good at deciding what fits a day; the immediate pain is pulling the right record
+fast. So the build wedge is **Call/Text → Identify Client/Pet → Book
+Confidently**, and M3 delivers it before any advanced scheduling intelligence.
+Capacity warnings and the scheduling-rules layer stay in scope but are
+**secondary and advisory** — they follow the lookup wedge (M5), they do not lead.
+
+**Resolves.** Drives PRD §1.1 (the immediate wedge), the §9 milestone re-order
+(M3 = the lookup / booking wedge; M4 = the schedule-of-record view), §7 Flow 2
+(booking starts from the identified household / pet), §4 (guidance is secondary
+to retrieval), and two new §10 acceptance criteria (10-second identification;
+booking without re-asking known details). Logged in `docs/DECISIONS.md`
+(2026-05-16). Also captured as KoyaOS dogfood lesson REQ-26.
+
+**Leaves open.** Nothing new. R1–R4 still stand.
+
+---
+
 ## Residual follow-ups — R1–R4 (carried into PRD §5 / §11)
 
 | ID | From | What is still needed | Blocks |

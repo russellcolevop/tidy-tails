@@ -3,7 +3,7 @@ when: 2026-05-16
 who: CC
 purpose: Product definition for the Tidy Tails v2 guided scheduler. As of Samantha's 2026-05-16 Group A answers, v2 is scoped as the scheduling source of truth for her upcoming appointments — built in phases, not as a generic full scheduler. Captures her real grooming workflow as a domain model and separates what is known from what is still open.
 venture: tidy-tails
-status: DRAFT for Russell review. Group A answered by Samantha 2026-05-16 (§5). v2 is now scoped as a phased guided scheduler that owns her upcoming appointments. Residual follow-ups R1–R4 in §5/§11 do not block starting the build. This is a deliberate scope change from the prior "scheduling-aware cockpit" stance — see §1; a docs/DECISIONS.md entry is recommended.
+status: DRAFT for Russell review. Group A answered by Samantha 2026-05-16 (§5). v2 is scoped as a phased guided scheduler that owns her upcoming appointments; the immediate build wedge is fast client/pet lookup and confident booking — Call/Text → Identify → Book (§1.1, M3) — with the schedule-of-record view and guided warnings sequenced after it. Scope change logged in docs/DECISIONS.md 2026-05-16. Residual follow-ups R1–R4 in §5/§11 do not block starting the build.
 supabase_project: pgkwovokciaqnbhpttba
 related:
   - _reports/2026-05-15-v2-design-lock-spec.md
@@ -32,9 +32,10 @@ feature schema ships separately from the security migration.
 
 **The name and the scope.** "Sam Scheduling OS" is the internal workstream name.
 As of 2026-05-16, v2 *is* scoped as a scheduler — see §1 — but a **phased,
-guided** one, not a generic calendar built all at once. Keep "Scheduling OS" out
-of user-facing copy: to Samantha the app is simply her grooming book and
-schedule.
+guided** one, not a generic calendar built all at once, and the first phase
+delivered is **fast client/pet lookup and confident booking**, not scheduling
+automation (§1.1). Keep "Scheduling OS" out of user-facing copy: to Samantha the
+app is simply her grooming book and schedule.
 
 **Schema grounding.** §2, §3, and §6 are grounded in the *actual* live `public`
 schema, read read-only via `list_tables` on 2026-05-16 — not assumptions.
@@ -111,9 +112,12 @@ change so any agent picking this up sees it was decided, not slipped in.
 upcoming appointments. But it is built as a **guided scheduler**, in phases — not
 a generic calendar app delivered in one shot:
 
-- **First** (milestones M3–M4): v2 holds and shows Sam's today + upcoming
-  schedule, and lets her create and edit appointments manually. This is the
-  scheduler's spine — v2 *becomes the book*.
+- **First** (M3 — the wedge): v2 delivers fast client / pet lookup,
+  disambiguation, and confident booking from the identified household — the
+  Call/Text → Identify → Book interaction (§1.1).
+- **Then** (M4 — the spine): v2 holds and shows Sam's today + upcoming schedule
+  against her recurring availability, and lets her move, reschedule, and cancel
+  — v2 *becomes the book*.
 - **Then** (M5): v2 adds *guidance* — soft, explained warnings around capacity,
   large-dog runs, crate space, service duration, temperament, and location.
 - **Then** (M6): reminders and rebooking surfaces.
@@ -142,6 +146,43 @@ mobile-first, cockpit-shaped rebuild of that tool *plus* the guided scheduler.
 **What v2 IS NOT:** see §4 — no online client self-booking, no automated message
 dispatch in the first cut, no public booking page.
 
+### §1.1 — The immediate wedge: Call/Text → Identify → Book Confidently
+
+**Source-of-truth ownership is the destination; fast lookup is the wedge.** v2
+owning the schedule (above) is the right end state. But the *first* product win
+is not scheduling automation — it is **fast client and pet retrieval the moment
+someone calls or texts.** Russell and Samantha tightened the scope to this in a
+2026-05-16 follow-up correction (`_reports/2026-05-16-sam-scheduling-answers.md`).
+
+**The job to be done.** A client calls or texts. They say "Bella," or the text
+just shows a phone number. Samantha needs to type a name, a phone number, a pet
+name, or a partial clue and **instantly** pull up the right *household* — without
+digging through paper cards, and without asking a repeat client questions she
+should already know the answer to. From that one identified household she then
+books. ("Household" is a UI / conceptual term, not a new schema entity: it is a
+`clients` row and all the `pets` rows that reference it.)
+
+**What she must see — fast — to book confidently:**
+
+- *Which* Bella — which pet, in which household, when a name is shared across
+  clients.
+- The owner and their phone number.
+- Every pet in the household.
+- Last visit date.
+- Usual service.
+- Usual price and duration, if known.
+- Allergies and special / care notes.
+- Enough context to book the appointment then and there.
+
+**Why this is the wedge.** Samantha told us scheduling *judgment* is not her hard
+problem — she is good at deciding what fits in a day (§3.8, §4). Her immediate
+pain is **retrieval and context**: getting the right household and its history in
+front of her fast enough to book on the call. So v2's first delivered phase (M3,
+§9) is the **Call/Text → Identify Client/Pet → Book Confidently** interaction.
+The schedule-of-record view, the recurring-availability model, and the guided
+capacity warnings are all real v2 scope — but they are sequenced *after* the
+lookup wedge (§4, §9), not before it.
+
 ---
 
 ## §2 — Gap analysis: v1 vs v2 scaffold vs "working app for Sam"
@@ -154,6 +195,7 @@ operator function, add the guided scheduler, and close the security gap.
 |---|---|---|---|
 | Operator authentication | none — shared anon key (R-1) | none | **Required** — Ship 2.2a |
 | Client / pet directory | yes — `client.html`, with writes | yes — read-only search + detail | rebuild **with edit** |
+| Fast lookup & disambiguation (call/text → identify) | basic name search only | read-only search | **Required — the v2 wedge** (§1.1, M3) |
 | Appointment history + financials | yes — `report.html` | yes — read-only | keep |
 | New-client / pet intake | yes — `intake.html`, with writes | none | **Required** — write |
 | Create / edit an appointment | yes — writes `appointments` | none | **Required** — write; v2 owns the schedule |
@@ -167,10 +209,13 @@ operator function, add the guided scheduler, and close the security gap.
 | RLS / data security | permissive — R-1 open | permissive (inherits live DB) | **Required** — Ship 2.2b cutover |
 
 **Reading the table.** Basic CRUD is not the gap — v1 already does it. The gaps
-are four: **security** (the R-1 hole, closed by the Ship 2.2b cutover); **form**
-(v1 is desktop HTML; v2 is a mobile-first app Sam uses between dogs); the
-**guided scheduler** (today + upcoming schedule, availability pattern, and the
-warnings layer — genuinely new); and **reminders/rebooking**.
+are five: **retrieval speed** (v1 has only basic name search; the v2 wedge is
+fast, fuzzy, disambiguating lookup that turns an incoming call or text into a
+confident booking in seconds — §1.1); **security** (the R-1 hole, closed by the
+Ship 2.2b cutover); **form** (v1 is desktop HTML; v2 is a mobile-first app Sam
+uses between dogs); the **guided scheduler** (today + upcoming schedule,
+availability pattern, and the warnings layer — genuinely new); and
+**reminders/rebooking**.
 
 **Schedule source of truth — resolved.** Earlier drafts flagged an open question:
 is Tidy's `appointments` table Sam's live forward schedule, or a record running
@@ -395,19 +440,25 @@ intake prompts for allergies (§8.6).
 ## §4 — A phased guided scheduler
 
 v2 is now the scheduling source of truth (§1) — but a **guided** scheduler,
-delivered in phases. This section defines its shape, the principle that governs
-it, and the boundaries that still hold.
+delivered in phases, and the first phase delivered is fast lookup and confident
+booking, not scheduling logic (§1.1). This section defines its shape, the
+principle that governs it, and the boundaries that still hold.
 
 ### The phasing
 
-- **M3–M4 — the spine.** v2 holds Sam's today + upcoming schedule and lets her
-  create and edit appointments manually, against her recurring availability
-  pattern. No clever rules yet — just a schedule she can trust.
+- **M3 — the wedge.** Fast client / pet lookup, disambiguation, and confident
+  booking — the **Call/Text → Identify → Book** interaction (§1.1). This is the
+  first product win and the first thing v2 must do well.
+- **M4 — the schedule spine.** v2 holds Sam's today + upcoming schedule against
+  her recurring availability pattern, and lets her move, reschedule, and cancel.
+  v2 *becomes the book.* No clever rules yet — just a schedule she can trust.
 - **M5 — the guidance.** v2 adds soft, explained warnings: large-dog runs, crate
-  capacity, daily load, service duration, temperament, location.
+  capacity, daily load, service duration, temperament, location. Secondary and
+  advisory — see below.
 - **M6 — reminders and rebooking.**
 
-Building the spine first means v2 earns trust as a plain, reliable schedule
+Building the wedge first, then the spine, means v2 earns its place on the most
+frequent operator interaction — and earns trust as a plain, reliable schedule —
 before any rule can get in Sam's way. See §9 for the milestone detail.
 
 ### Principle: do not over-automate Samantha's judgment
@@ -432,6 +483,17 @@ temperament." v2 must respect that:
 
 This principle is the test for every rule added in M5: if it would *block* Sam
 on anything short of a real impossibility, it is wrong.
+
+### Scheduling guidance is secondary to fast retrieval
+
+Samantha told us scheduling *judgment* is not her hard problem — she is good at
+deciding what fits a day, and the capacity rules in §3.8 are *her* judgment, not
+a gap v2 fills. Her immediate pain is **retrieval and context**: pulling the
+right household and its history in front of her fast enough to book on the call
+(§1.1). So the guided-warnings layer (M5), though genuinely useful, is
+**secondary and advisory** — polish on top of a scheduler whose first job is
+fast, confident booking. v2 earns its place by making the M3 lookup wedge
+excellent before the M5 warnings get clever.
 
 ### What v2 still does NOT build (the surviving boundary)
 
@@ -474,12 +536,22 @@ are captured in `_reports/2026-05-16-sam-scheduling-answers.md`.
 | Q-A1 | Boss-work / blocked days | **ANSWERED** — recurring weekly pattern (§3.1, §3.6). |
 | Q-A2 | Service list | **NOT ANSWERED** — Sam did not re-confirm the list; four-value enum stands by default → **R1**. |
 | Q-A3 | Locations / drop-off vs mobile | **ANSWERED (partial)** — fixed-location drop-off (§3.7); residual on annette/gina row meaning → **R3**. |
-| Q-A4 | Scheduling source of truth | **ANSWERED — load-bearing.** v2 owns upcoming appointments; drives §1 and §4. |
+| Q-A4 | Scheduling source of truth | **ANSWERED — load-bearing.** v2 owns upcoming appointments; drives §1, §1.1, and §4. |
 | Q-A5 | Working days / hours | **ANSWERED (partial)** — days known (§3.1); daily *hours* not specified → **R2**. |
 | Q-A6 | Reminders | **ANSWERED** — owner appointment + rebook reminders wanted (§3.9); dispatch vs surface → **R4**. |
 
 Samantha also volunteered answers to two Group B questions early: **Q-B1**
 (duration factors — §3.4) and **Q-B2** (capacity — §3.8).
+
+### Follow-up correction (2026-05-16) — tighten the immediate wedge
+
+After the Group A answers were folded in, Russell relayed one more product
+correction from himself and Samantha: keep v2 as the scheduling source of truth,
+but make the *immediate* build wedge fast client / pet lookup and confident
+booking — **Call/Text → Identify → Book** — rather than scheduling automation.
+Captured in `_reports/2026-05-16-sam-scheduling-answers.md` and logged in
+`docs/DECISIONS.md` (2026-05-16). Drives §1.1, the §9 milestone order, §7 Flow 2,
+and the §10 acceptance criteria.
 
 ### Residual follow-ups — R1–R4 (small; do not block starting the build)
 
@@ -578,7 +650,10 @@ prose; drafted as migrations later, gated where noted.
 
 **Explicitly not needed:** a stored per-pet "typical interval" column — the
 intended cadence is `preferred_frequency_weeks`, and the observed interval is
-cheap to compute on read.
+cheap to compute on read. The same applies to the household card's (§1.1, §7
+Flow 2) **usual service**, **usual price**, and **usual duration** per pet — all
+derived on read from that pet's appointment history; no stored column, no
+migration.
 
 **Confirm before drafting any migration.** Re-read the live schema
 (`list_tables`, read-only) at migration-draft time; this PRD's snapshot is dated
@@ -602,17 +677,30 @@ Six flows. Each: **trigger**, **steps**, **what v2 shows**, **out of scope**.
 - **Out of scope.** No editing of the recurring availability pattern here (that
   is its own surface).
 
-### Flow 2 — Scheduling an appointment (guided)
+### Flow 2 — Call or text → identify the household → book confidently
 
-- **Trigger.** Sam is booking an appointment with a client.
-- **Steps.** From a client/pet, choose "Add appointment" → pick date, time,
-  location, service → v2 shows any **soft warnings** (large-dog run, crate space,
-  load, duration) with the reason → Sam confirms or adjusts → save.
-- **v2 shows.** A lightweight form; guided warnings that explain themselves; a
-  **hard stop only** if the date is a non-Tidy-Tails day or a closed location
-  (§4).
+> The v2 wedge (§1.1). The most frequent operator interaction, and the first
+> thing v2 must do well.
+
+- **Trigger.** A client calls or texts — "Can I get Bella in?" — or a text
+  arrives showing only a phone number.
+- **Steps.** Sam types a clue into one search box — a phone number, an owner's
+  first or last name, a pet name, or a partial fragment of any of them → v2
+  returns matching **households** (a household = a client and all their pets) →
+  if the clue is ambiguous (several dogs named "Bella," two owners with the same
+  surname) v2 shows enough to disambiguate at a glance → Sam taps the right
+  household → from the household she picks the pet and "Add appointment" → picks
+  date, time, location, service → save.
+- **v2 shows.** *On the result / household card:* which pet in which household,
+  the owner and phone, every pet in the household, last visit date, usual
+  service, usual price and duration if known, and allergy / care notes — enough
+  context to book without asking the client anything already in the app. *On the
+  booking step:* a lightweight form; any **soft warnings** (large-dog run, crate
+  space, load, duration) with their reason (M5); a **hard stop only** if the date
+  is a non-Tidy-Tails day or a closed location (§4).
 - **Out of scope.** No client self-booking; no automatic slot assignment — Sam
-  chooses, v2 advises.
+  chooses, v2 advises. Fuzzy search is forgiving matching, not a fabricated
+  guess: v2 ranks and shows candidates, Sam picks the right one.
 
 ### Flow 3 — Rebooking after a groom
 
@@ -836,23 +924,26 @@ The bar: Samantha can keep her digital book current end-to-end inside v2, with
 | **M0 — Read-only scaffold** | Done. Directory, history, lapsed view, revenue — read-only. | Shipped (Ship 2.1, commit `2e9a5cb`). |
 | **M1 — Operator auth** | Real Supabase Auth login; v2 is a private operator tool. | Ship 2.2a (buildable now against the permissive DB). |
 | **M2 — Log a completed groom + inline editing foundation** | Flow 4 and the §8 "keep the book current" base (inline edit, add-missing). **No migration** for the core writes. | M1. Working backup path (§11). |
-| **M3 — Today + upcoming schedule** | Flow 1 — v2 holds and shows Sam's schedule of record. **No migration** for the appointment record. | Group A answered ✓ (R2 daily-hours can default). |
-| **M4 — Manual appointment create/edit + recurring availability + care flags** | Flows 2 and 5; the recurring weekly pattern + date-exceptions. v2 is now the scheduling source of truth. | Availability/locations schema (§6.1); R3 clarified. |
-| **M5 — Guided scheduling warnings** | The soft warnings layer — capacity, large-dog runs, crate, duration, temperament, location (§4). | M4; capacity/duration schema (§6.1); R1. |
+| **M3 — Fast lookup, disambiguation & confident booking (the wedge)** | Flow 2 — the **Call/Text → Identify → Book** interaction (§1.1): search by phone, owner first/last name, pet name, and partial/fuzzy fragments; common-pet-name disambiguation; household cards (pets, last visit, usual service, usual price/duration, notes); booking that starts from the identified household/pet. **No migration** for the appointment record. | M1; M2 write path. Group A answered ✓. |
+| **M4 — Today + upcoming schedule + recurring availability + care flags** | Flows 1 and 5 — v2 holds and shows Sam's schedule of record; the recurring weekly pattern + date-exceptions; appointment move/reschedule/cancel; care flags. v2 is now the scheduling source of truth. | M3; availability/locations schema (§6.1); R2 (can default), R3 clarified. |
+| **M5 — Guided scheduling warnings** | The soft warnings layer — capacity, large-dog runs, crate, duration, temperament, location (§4). Secondary and advisory. | M4; capacity/duration schema (§6.1); R1. |
 | **M6 — Reminders + rebooking** | Flows 3 and 6; due/overdue + rebook + lapsed surfaces. | R4 (dispatch vs surface). |
 | **M7 — RLS security cutover** | Ship 2.2b flag-day cutover; R-1 closed; v2 is the live, secured source of truth. | All feature ships landed; fresh backup; per the Ship 2.2 plan. |
 
 **Sequencing notes.** M1 can start now. M2 proves the write path and starts the
-"keep the book current" workflow. M3–M4 are the guided scheduler's spine — v2
-*becomes the book*. M5 layers guidance on top, governed by the §4
-over-automation principle. M7 is deliberately last, per the ratified flag-day
-decision: the security migration runs only after v2 is a complete tool. The
-residual follow-ups R1–R4 attach to specific milestones (noted above) but do not
-block starting M1–M3.
+"keep the book current" workflow. **M3 is the wedge** — fast lookup,
+disambiguation, and confident booking (§1.1); it is sequenced first because it is
+the most frequent operator interaction and the immediate pain. M4 is the schedule
+spine — v2 *becomes the book*. M5 layers guidance on top, governed by the §4
+over-automation principle, and is secondary to the M3 wedge. M7 is deliberately
+last, per the ratified flag-day decision: the security migration runs only after
+v2 is a complete tool. The residual follow-ups R1–R4 attach to specific
+milestones (noted above) but do not block starting M1–M3.
 
-**One-time onboarding.** At or before M3, Samantha's current set of *upcoming*
-appointments must be loaded into v2's `appointments` table so the schedule is
-complete on day one (§11).
+**One-time onboarding.** At or before M4, Samantha's current set of *upcoming*
+appointments must be loaded into v2's `appointments` table so the schedule view
+is complete on day one (§11). M3's lookup / booking wedge does not depend on this
+— it creates new appointments — but the M4 schedule of record does.
 
 ---
 
@@ -861,30 +952,37 @@ complete on day one (§11).
 **Functional — v2 must let Sam, in one place:**
 
 1. Log in as herself; no one else can see her data (post-M7: RLS-enforced).
-2. Open the app and see today's schedule, and her upcoming schedule, in order by
+2. **Identify a repeat client or pet in under 10 seconds** — from a phone
+   number, a partial owner name (first or last), or a pet name — including
+   disambiguating a common pet name (which "Bella") down to the right household
+   (§1.1).
+3. **Book an appointment from the identified household / pet without re-asking
+   for information already in the app** — last name, which dog, usual service,
+   usual price — Sam sees the household card and books from it.
+4. Open the app and see today's schedule, and her upcoming schedule, in order by
    location — this is her schedule of record, not a mirror.
-3. **Create and edit upcoming appointments in Tidy Tails** — booking, moving, and
-   cancelling appointments in v2, with guided warnings that explain and never
-   silently block (§4).
-4. Open a dog and immediately see its care flags — allergies, vaccine status,
+5. Move, reschedule, and cancel upcoming appointments in v2, with guided warnings
+   that explain and never silently block (§4).
+6. Open a dog and immediately see its care flags — allergies, vaccine status,
    behavior — without searching.
-5. Mark a groom complete and leave a note that shows up next visit.
-6. Rebook a dog with a sensible suggested return date.
-7. See which owners need an appointment reminder, which clients to prompt for a
+7. Mark a groom complete and leave a note that shows up next visit.
+8. Rebook a dog with a sensible suggested return date.
+9. See which owners need an appointment reminder, which clients to prompt for a
    rebook, and which have lapsed.
-8. Never encounter a fabricated number — every duration, capacity signal, or
-   interval shown is read from real data or entered/confirmed by Sam.
+10. Never encounter a fabricated number — every duration, capacity signal, or
+    interval shown is read from real data or entered/confirmed by Sam.
 
 **Lived-adoption — the criterion that actually proves it (mirrors design-lock
 §7.4):**
 
-9. Across a defined window (the post-cutover watch week, minimum five working
-   days), Samantha **runs both her day and her upcoming schedule from v2** —
-   opening it each morning, scheduling and logging in it — **without falling back
-   to v1's HTML modules, a paper book, or any other calendar.** A feature-complete
-   app Sam does not actually reach for has not met acceptance.
+11. Across a defined window (the post-cutover watch week, minimum five working
+    days), Samantha **runs both her day and her upcoming schedule from v2** —
+    opening it each morning, scheduling and logging in it — **without falling
+    back to v1's HTML modules, a paper book, or any other calendar.** A
+    feature-complete app Sam does not actually reach for has not met acceptance.
 
-Criterion 9 is the real bar. Criteria 1–8 are necessary; 9 is sufficient.
+Criteria 2–3 are the wedge — the immediate win v2 ships first (§1.1, M3).
+Criterion 11 is the real bar. Criteria 1–10 are necessary; 11 is sufficient.
 
 Keeping the digital book current has its own acceptance criteria in §8.8. v2 is
 not "a working app for Sam" unless both this section's criteria and §8.8's pass.
@@ -896,15 +994,17 @@ not "a working app for Sam" unless both this section's criteria and §8.8's pass
 - **Residual follow-ups R1–R4 (§5).** Service list, daily hours, annette/gina
   row meaning, reminder dispatch-vs-surface. Small; attach to M4–M6; do not block
   starting the build.
-- **One-time appointment onboarding.** v2 is now the schedule of record — at/before
-  M3, Sam's current *upcoming* appointments must be loaded into v2's
-  `appointments` table. Decide the mechanism (manual entry by Sam, a one-time
-  import) when M3 is scoped.
+- **One-time appointment onboarding.** v2 is now the schedule of record —
+  at/before M4, Sam's current *upcoming* appointments must be loaded into v2's
+  `appointments` table so the schedule view is complete. Decide the mechanism
+  (manual entry by Sam, a one-time import) when M4 is scoped. M3's lookup /
+  booking wedge does not depend on it.
 - **`appointments` row count.** `list_tables` returned a stale `0` estimate
   (clients/pets/sam_review estimates were accurate). Authoritative count is
   **730** per the Phase 2 execution report's explicit `count(*)` (2026-05-16).
   An exact recount, plus a count of future-dated rows, is a one-query read-only
-  step worth running before M3 scoping.
+  step worth running before M4 scoping (the future-dated count feeds the
+  schedule-of-record view).
 - **`venture-ops/dump_supabase.py` still missing.** The documented backup script
   does not exist on disk (REQ-17). Every write milestone (from M2) needs a
   working backup path; close this before M2.
@@ -913,26 +1013,35 @@ not "a working app for Sam" unless both this section's criteria and §8.8's pass
 - **Landry/Laundry data question.** 4 rows at 705-796-0620 pending Sam's
   Cash-vs-Charlotte answer (`v1-active-bugs.md` B4) — unrelated to scheduling but
   affects directory correctness.
-- **docs/DECISIONS.md entry recommended.** The §1 scope change (v2 as scheduling
-  source of truth) is a real decision that supersedes design-lock §8's "do not
-  build scheduling." It should be logged in `docs/DECISIONS.md`. Not done in this
-  pass — flagged for Russell.
+- **docs/DECISIONS.md entry — logged.** The §1 scope change (v2 as scheduling
+  source of truth) and the §1.1 wedge tightening (Call/Text → Identify → Book as
+  the immediate build wedge) are logged in `docs/DECISIONS.md` as a single
+  combined entry dated 2026-05-16. This supersedes design-lock §8's "do not build
+  scheduling."
 
 ---
 
-## §12 — PRD review notes (2026-05-16 — Group A checkpoint)
+## §12 — PRD review notes (2026-05-16 — Group A checkpoint + wedge correction)
 
-This revision incorporates Samantha's 2026-05-16 Group A answers. Standing notes
-for anyone picking up the v2 build:
+This revision incorporates Samantha's 2026-05-16 Group A answers and a same-day
+follow-up correction tightening the immediate wedge. Standing notes for anyone
+picking up the v2 build:
 
 - **Scope changed.** v2 is no longer a scheduling-*aware* cockpit — it is the
   **scheduling source of truth** for Sam's upcoming appointments, built as a
   **phased guided scheduler** (§1, §4). This supersedes design-lock §8 and is a
-  deliberate, operator-driven scope change; a `docs/DECISIONS.md` entry is
-  recommended (§11).
-- **Not a generic full scheduler.** The phasing (M3–M4 spine, M5 guidance, M6
-  reminders) and the "do not over-automate Sam's judgment" principle (§4) are
-  load-bearing. v2 warns and explains; it hard-blocks only genuine
+  deliberate, operator-driven scope change, logged in `docs/DECISIONS.md`
+  (2026-05-16).
+- **The immediate wedge is fast lookup, not scheduling automation.** Per a
+  2026-05-16 follow-up correction from Russell and Samantha, v2's first delivered
+  phase (M3) is the **Call/Text → Identify → Book Confidently** interaction —
+  fast search, disambiguation, household cards, booking from the identified
+  household (§1.1). The schedule-of-record view (M4) and the guided warnings (M5)
+  follow; the warnings layer is advisory, not load-bearing. Build M3 well before
+  M5 gets clever.
+- **Not a generic full scheduler.** The phasing (M3 wedge, M4 schedule spine, M5
+  guidance, M6 reminders) and the "do not over-automate Sam's judgment" principle
+  (§4) are load-bearing. v2 warns and explains; it hard-blocks only genuine
   impossibilities. Online client self-booking and automated dispatch stay out.
 - **Group A is answered; R1–R4 remain.** The residual follow-ups are small and do
   not block starting M1–M3, but should be cleared before the milestones that
@@ -949,6 +1058,8 @@ for anyone picking up the v2 build:
 
 *Generated by CC 2026-05-16. PRD/spec work only — no code written, no Supabase
 mutated (the schema was read read-only via `list_tables`). Updated from
-Samantha's 2026-05-16 Group A answers (relayed by Russell); her answers and the
-interpretation are in `_reports/2026-05-16-sam-scheduling-answers.md`. KoyaOS dogfood lessons are in
+Samantha's 2026-05-16 Group A answers and a same-day follow-up correction from
+Russell and Samantha tightening the immediate wedge (relayed by Russell); the
+answers and interpretation are in `_reports/2026-05-16-sam-scheduling-answers.md`.
+KoyaOS dogfood lessons are in
 `_reports/2026-05-16-koyaos-dogfood-sam-scheduling-os-prd.md`.*
