@@ -1,8 +1,10 @@
 # Tidy Tails v2 — grooming cockpit
 
-A mobile-first, installable grooming cockpit for Samantha. **Ship 2.1 — read-only
-scaffold.** Built for one operator's working day: fast client/pet search, pet
-safety cards, appointment history, lapsed clients, vaccination status, revenue.
+A mobile-first, installable grooming cockpit for Samantha. **Ship 2.2b —
+production-bound: reads live data; every write surface stays gated until an
+explicit post-cutover flip.** Built for one operator's working day: fast
+client/pet search, pet safety cards, appointment history, lapsed clients,
+vaccination status, revenue.
 
 This is **not** a Pawfinity clone. It is the five-minute daily cockpit, narrowed
 to Samantha's workflow.
@@ -31,16 +33,18 @@ Auth arrives in Ship 2.2.
 
 ## Safety — what this build does NOT do
 
-This is a **read-only** scaffold. By construction:
+This build performs **no live writes**. By construction:
 
-- No writes to the live Supabase project — the live path is `SELECT`-only.
+- No live writes — every write surface is gated; the live data path is
+  `SELECT`-only until the post-cutover write flips.
 - No SQL execution, no schema changes, no RLS changes.
 - No SMS is sent — the reminder flow is built but its Send action is disabled.
 - Groom logging is built but its Save action is disabled.
 - No customer data is committed — fixtures are fully synthetic.
 
-Writes arrive in later ships, gated behind authentication and the database
-security (RLS) migration.
+Writes turn on after the Ship 2.2b RLS cutover, **one surface at a time**, each
+behind its own flag and explicit approval — see the write-flip plan in
+`../_reports/`.
 
 ## Data source
 
@@ -68,9 +72,11 @@ Screen" in a mobile browser.
 
 ## Deploy
 
-Not deployed yet. When ready: a Vercel project with **Root Directory = `v2/`**.
-v1 stays on GitHub Pages, untouched. A preview deploy serving real customer data
-is a new exposure surface — get explicit sign-off first.
+Deployed to **Vercel Production** as project `tidy-tails-v2` (Root Directory =
+`v2/`) — `https://tidy-tails-v2.vercel.app`. Redeploy with `vercel --prod` from
+`v2/`. v1 stays on GitHub Pages, untouched, until the Ship 2.2b RLS cutover
+takes it dark. Write surfaces stay gated regardless of deploy — see the cutover
+runbook and write-flip plan in `../_reports/`.
 
 ## Structure
 
