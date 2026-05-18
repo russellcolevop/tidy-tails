@@ -18,10 +18,10 @@ Tidy Tails has a live Supabase backend that is actively populated.
 
 - **Project**: `Tidy Tails` on `russellcolevop's Org`, Supabase project ref `pgkwovokciaqnbhpttba`, region us-east-1, Nano (free tier — no automated backups).
 - **Dashboard**: `https://supabase.com/dashboard/project/pgkwovokciaqnbhpttba`
-- **Tables (public schema)**:
-  - `clients` — 268 rows
-  - `pets` — 352 rows
-  - `appointments` — 730 rows
+- **Tables (public schema)** — the row counts below are an *illustrative snapshot* (verified 2026-05-17), **not** a baseline. They drift as Samantha works, and an earlier contact-card reconciliation reset the `clients`/`pets` totals (the long-standing `268`/`352` figures are obsolete). **Never use a count from this doc — or a `list_tables`/planner estimate — as a Ship 2.2b cutover verifier baseline.** Planner estimates can be wrong by 100× (a `list_tables` run on 2026-05-17 reported `appointments` ≈ 7 against a true 737). The only valid cutover baseline is the exact `count(*)` captured into the fresh backup manifest at cutover time — see `_reports/2026-05-17-ship-2.2b-backup-rollback-rehearsal-checklist.md`.
+  - `clients` — ~137 rows
+  - `pets` — ~188 rows
+  - `appointments` — ~737 rows
   - `booking_requests` — 0 rows
   - `client_accounts` — 0 rows
   - `automations_log` — 0 rows
