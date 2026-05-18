@@ -1,0 +1,49 @@
+{
+  "_meta": {
+    "artifact": "Tidy Tails production pre-migration RLS policy snapshot",
+    "purpose": "Ship 2.2b rehearsal — authoritative machine-readable copy of every public-schema RLS policy as it existed BEFORE the groomer_id RLS-hardening migration. The Task 8 fidelity byte-compare runs against this file; the rollback migration must recreate exactly these policy names.",
+    "project_ref": "pgkwovokciaqnbhpttba",
+    "project_name": "Tidy Tails (production)",
+    "tier": "Nano / free",
+    "region": "us-east-1",
+    "postgres_version": "17.6",
+    "captured_at": "2026-05-17",
+    "captured_by": "read-only introspection via the Supabase MCP execute_sql tool",
+    "source_query": "SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual, with_check FROM pg_policies WHERE schemaname = 'public' ORDER BY tablename, cmd, policyname;",
+    "policy_count": 21,
+    "tables_covered": ["appointments", "automations_log", "booking_requests", "client_accounts", "clients", "pets", "sam_review_responses"],
+    "contains_customer_data": false,
+    "production_mutation": "none — SELECT on pg_policies catalog only",
+    "notes": [
+      "All 21 policies are PERMISSIVE, roles {public}. Every qual/with_check is the literal `true` — i.e. every policy is unrestricted (this is the v1 'public read/write' posture documented in tidy-tails/CLAUDE.md).",
+      "Policy NAMES are inconsistent: clients/pets carry both 'Anon can ...' and 'Authenticated can ...' names; appointments/automations_log use 'Authenticated can ...'; booking_requests/client_accounts use 'Anon can ...'; sam_review_responses uses the snake_case 'sam_review_anon_insert'. Despite the names, roles is {public} on all 21 — the names do NOT reflect actual role scoping.",
+      "clients and pets have 4 policies each (a redundant SELECT pair: 'Anon can select ...' AND 'Authenticated can select all ...'). The other 5 tables have 3 or fewer.",
+      "No DELETE policy exists on any table — the three DELETE policies on clients/pets/appointments were dropped 2026-04-22 (see tidy-tails/CLAUDE.md RLS audit).",
+      "sam_review_responses has only an INSERT policy — no SELECT or UPDATE policy (INSERT-only via anon key by design).",
+      "`roles` is preserved as the raw Postgres array literal text ('{public}') exactly as pg_policies returned it."
+    ]
+  },
+  "policies": [
+    {"schemaname": "public", "tablename": "appointments", "policyname": "Authenticated can insert appointments", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "INSERT", "qual": null, "with_check": "true"},
+    {"schemaname": "public", "tablename": "appointments", "policyname": "Authenticated can select appointments", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "SELECT", "qual": "true", "with_check": null},
+    {"schemaname": "public", "tablename": "appointments", "policyname": "Authenticated can update appointments", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "UPDATE", "qual": "true", "with_check": null},
+    {"schemaname": "public", "tablename": "automations_log", "policyname": "Authenticated can insert automations", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "INSERT", "qual": null, "with_check": "true"},
+    {"schemaname": "public", "tablename": "automations_log", "policyname": "Authenticated can select automations", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "SELECT", "qual": "true", "with_check": null},
+    {"schemaname": "public", "tablename": "automations_log", "policyname": "Authenticated can update automations", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "UPDATE", "qual": "true", "with_check": null},
+    {"schemaname": "public", "tablename": "booking_requests", "policyname": "Anon can insert booking_requests", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "INSERT", "qual": null, "with_check": "true"},
+    {"schemaname": "public", "tablename": "booking_requests", "policyname": "Anon can select booking_requests", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "SELECT", "qual": "true", "with_check": null},
+    {"schemaname": "public", "tablename": "booking_requests", "policyname": "Anon can update booking_requests", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "UPDATE", "qual": "true", "with_check": null},
+    {"schemaname": "public", "tablename": "client_accounts", "policyname": "Anon can insert client_accounts", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "INSERT", "qual": null, "with_check": "true"},
+    {"schemaname": "public", "tablename": "client_accounts", "policyname": "Anon can select client_accounts", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "SELECT", "qual": "true", "with_check": null},
+    {"schemaname": "public", "tablename": "client_accounts", "policyname": "Anon can update client_accounts", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "UPDATE", "qual": "true", "with_check": null},
+    {"schemaname": "public", "tablename": "clients", "policyname": "Anon can insert clients", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "INSERT", "qual": null, "with_check": "true"},
+    {"schemaname": "public", "tablename": "clients", "policyname": "Anon can select clients", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "SELECT", "qual": "true", "with_check": null},
+    {"schemaname": "public", "tablename": "clients", "policyname": "Authenticated can select all clients", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "SELECT", "qual": "true", "with_check": null},
+    {"schemaname": "public", "tablename": "clients", "policyname": "Authenticated can update clients", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "UPDATE", "qual": "true", "with_check": null},
+    {"schemaname": "public", "tablename": "pets", "policyname": "Anon can insert pets", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "INSERT", "qual": null, "with_check": "true"},
+    {"schemaname": "public", "tablename": "pets", "policyname": "Anon can select pets", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "SELECT", "qual": "true", "with_check": null},
+    {"schemaname": "public", "tablename": "pets", "policyname": "Authenticated can select all pets", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "SELECT", "qual": "true", "with_check": null},
+    {"schemaname": "public", "tablename": "pets", "policyname": "Authenticated can update pets", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "UPDATE", "qual": "true", "with_check": null},
+    {"schemaname": "public", "tablename": "sam_review_responses", "policyname": "sam_review_anon_insert", "permissive": "PERMISSIVE", "roles": "{public}", "cmd": "INSERT", "qual": null, "with_check": "true"}
+  ]
+}
