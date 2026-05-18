@@ -46,6 +46,30 @@ describe("lastAppointment — last-visit derivation", () => {
     ];
     expect(lastAppointment(list)).toBe(newest);
   });
+
+  it("ignores a future-dated booking, returning the most recent past visit", () => {
+    const lastPastVisit = appt("2026-05-10", "Full groom", 80);
+    const list = [
+      appt("2026-03-01", "Bath & tidy", 50),
+      lastPastVisit,
+      appt("2026-08-01", "Full groom", 80), // a future booking, not a visit
+    ];
+    expect(lastAppointment(list, "2026-05-18")).toBe(lastPastVisit);
+  });
+
+  it("returns null when every appointment is a future booking", () => {
+    const list = [
+      appt("2026-06-01", "Full groom", 80),
+      appt("2026-07-15", "Full groom", 80),
+    ];
+    expect(lastAppointment(list, "2026-05-18")).toBeNull();
+  });
+
+  it("counts an appointment dated today as a past visit, not a future booking", () => {
+    const todayVisit = appt("2026-05-18", "Full groom", 80);
+    const list = [appt("2026-04-01", "Bath & tidy", 50), todayVisit];
+    expect(lastAppointment(list, "2026-05-18")).toBe(todayVisit);
+  });
 });
 
 describe("usualService — most common service", () => {

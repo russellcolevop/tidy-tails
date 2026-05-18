@@ -4,10 +4,20 @@
 import type { Appointment, Client, Pet, Vaccination } from "./data/types";
 import { daysFromToday } from "./format";
 
-/** Most recent appointment in a list, or null. */
-export function lastAppointment(appointments: Appointment[]): Appointment | null {
-  if (appointments.length === 0) return null;
-  return [...appointments].sort((a, b) => b.date.localeCompare(a.date))[0];
+/**
+ * Most recent *past* appointment in a list — the client's last actual visit —
+ * or null. A booking dated after `today` is a future appointment, not a visit,
+ * so it is excluded: "last visit" never shows a date that has not happened yet.
+ * An appointment dated exactly `today` counts as a visit. `today` (an ISO
+ * `YYYY-MM-DD` date) defaults to the current date.
+ */
+export function lastAppointment(
+  appointments: Appointment[],
+  today: string = iso(new Date()),
+): Appointment | null {
+  const pastVisits = appointments.filter((a) => a.date <= today);
+  if (pastVisits.length === 0) return null;
+  return [...pastVisits].sort((a, b) => b.date.localeCompare(a.date))[0];
 }
 
 /** Newest-first copy of an appointment list. */
