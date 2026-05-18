@@ -40,6 +40,7 @@ describe("mapClientRow — live clients row → Client", () => {
       phone: "705-555-0133",
       alt_contact: "705-555-9000",
       email: "marisol@example.com",
+      address: "12 Maple St",
       notes: "Prefers mornings",
       created_at: "2025-01-02T10:00:00Z",
     };
@@ -50,6 +51,7 @@ describe("mapClientRow — live clients row → Client", () => {
       phone: "705-555-0133",
       alt_contact: "705-555-9000",
       email: "marisol@example.com",
+      address: "12 Maple St",
       notes: "Prefers mornings",
       created_at: "2025-01-02T10:00:00Z",
     });
@@ -63,9 +65,19 @@ describe("mapClientRow — live clients row → Client", () => {
       phone: "",
       alt_contact: null,
       email: null,
+      address: null,
       notes: null,
       created_at: "",
     });
+  });
+
+  it("carries the live `address` column onto Client.address", () => {
+    expect(mapClientRow({ address: "12 Maple St" }).address).toBe("12 Maple St");
+  });
+
+  it("maps a missing or empty address to null", () => {
+    expect(mapClientRow({}).address).toBeNull();
+    expect(mapClientRow({ address: "" }).address).toBeNull();
   });
 });
 

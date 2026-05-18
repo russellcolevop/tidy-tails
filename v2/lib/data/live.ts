@@ -59,6 +59,7 @@ export function mapClientRow(r: Row): Client {
     phone: str(r.phone),
     alt_contact: strOrNull(r.alt_contact),
     email: strOrNull(r.email),
+    address: strOrNull(r.address),
     notes: strOrNull(r.notes),
     created_at: str(r.created_at),
   };

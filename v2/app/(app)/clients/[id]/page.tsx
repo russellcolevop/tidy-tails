@@ -55,6 +55,9 @@ export default async function ClientDetailPage({
           {client.alt_contact ? (
             <span className="text-ink-soft">{client.alt_contact}</span>
           ) : null}
+          {client.address ? (
+            <span className="text-ink-soft">{client.address}</span>
+          ) : null}
         </div>
       </header>
 

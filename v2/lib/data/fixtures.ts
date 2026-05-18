@@ -16,31 +16,31 @@ function isoDaysAgo(n: number): string {
 }
 
 export const FIXTURE_CLIENTS: Client[] = [
-  { id: "c01", first_name: "Felix", last_name: "Aaronson", phone: "705-555-0106", alt_contact: null, email: "felix.a@example.com", notes: null, created_at: isoDaysAgo(620) },
-  { id: "c02", first_name: "Maya", last_name: "Albright", phone: "705-555-0118", alt_contact: "Partner: 705-555-0119", email: "maya.albright@example.com", notes: "Prefers morning slots.", created_at: isoDaysAgo(540) },
-  { id: "c03", first_name: "Theo", last_name: "Brandt", phone: "705-555-0147", alt_contact: null, email: null, notes: "Two dogs — usually booked together.", created_at: isoDaysAgo(710) },
-  { id: "c04", first_name: "Priya", last_name: "Castellano", phone: "705-555-0163", alt_contact: null, email: "priya.c@example.com", notes: null, created_at: isoDaysAgo(395) },
-  { id: "c05", first_name: "Marcus", last_name: "Delaney", phone: "705-555-0172", alt_contact: null, email: null, notes: "Pays by e-transfer.", created_at: isoDaysAgo(480) },
-  { id: "c06", first_name: "Jonah", last_name: "Ellsworth", phone: "705-555-0168", alt_contact: null, email: "jonah.e@example.com", notes: null, created_at: isoDaysAgo(300) },
-  { id: "c07", first_name: "Wren", last_name: "Halloway", phone: "705-555-0102", alt_contact: null, email: "wren.h@example.com", notes: "Show dog — frequent visits.", created_at: isoDaysAgo(640) },
-  { id: "c08", first_name: "Garrett", last_name: "Hsu", phone: "705-555-0190", alt_contact: "Work: 705-555-0191", email: null, notes: null, created_at: isoDaysAgo(560) },
-  { id: "c09", first_name: "Otis", last_name: "Lindqvist", phone: "705-555-0131", alt_contact: null, email: null, notes: "Big dog — needs the extra time slot.", created_at: isoDaysAgo(420) },
-  { id: "c10", first_name: "Sofia", last_name: "Marchetti", phone: "705-555-0113", alt_contact: null, email: "sofia.m@example.com", notes: null, created_at: isoDaysAgo(260) },
-  { id: "c11", first_name: "Desmond", last_name: "Ng", phone: "705-555-0109", alt_contact: null, email: "desmond.ng@example.com", notes: null, created_at: isoDaysAgo(350) },
-  { id: "c12", first_name: "Hannah", last_name: "Ortega", phone: "705-555-0184", alt_contact: null, email: null, notes: "Reminder texts appreciated.", created_at: isoDaysAgo(510) },
-  { id: "c13", first_name: "Aileen", last_name: "Park", phone: "705-555-0125", alt_contact: null, email: "aileen.park@example.com", notes: null, created_at: isoDaysAgo(330) },
-  { id: "c14", first_name: "Dale", last_name: "Pemberton", phone: "705-555-0157", alt_contact: null, email: null, notes: "Has not booked in a while — follow up.", created_at: isoDaysAgo(600) },
-  { id: "c15", first_name: "Camila", last_name: "Reyes", phone: "705-555-0179", alt_contact: "Partner: 705-555-0180", email: "camila.r@example.com", notes: "Two huskies, heavy de-shed.", created_at: isoDaysAgo(470) },
-  { id: "c16", first_name: "Greta", last_name: "Sandoval", phone: "705-555-0188", alt_contact: null, email: null, notes: null, created_at: isoDaysAgo(210) },
-  { id: "c17", first_name: "Bonnie", last_name: "Tran", phone: "705-555-0144", alt_contact: null, email: "bonnie.tran@example.com", notes: null, created_at: isoDaysAgo(290) },
-  { id: "c18", first_name: "Russ", last_name: "Vandermeer", phone: "705-555-0120", alt_contact: null, email: "russ.v@example.com", notes: null, created_at: isoDaysAgo(380) },
-  { id: "c19", first_name: "Renata", last_name: "Voss", phone: "705-555-0136", alt_contact: null, email: null, notes: "Two poodles.", created_at: isoDaysAgo(660) },
-  { id: "c20", first_name: "Caleb", last_name: "Whitmore", phone: "705-555-0151", alt_contact: null, email: "caleb.w@example.com", notes: null, created_at: isoDaysAgo(580) },
+  { id: "c01", first_name: "Felix", last_name: "Aaronson", phone: "705-555-0106", alt_contact: null, email: "felix.a@example.com", address: "14 Birchwood Lane", notes: null, created_at: isoDaysAgo(620) },
+  { id: "c02", first_name: "Maya", last_name: "Albright", phone: "705-555-0118", alt_contact: "Partner: 705-555-0119", email: "maya.albright@example.com", address: "208 Lakeshore Rd", notes: "Prefers morning slots.", created_at: isoDaysAgo(540) },
+  { id: "c03", first_name: "Theo", last_name: "Brandt", phone: "705-555-0147", alt_contact: null, email: null, address: null, notes: "Two dogs — usually booked together.", created_at: isoDaysAgo(710) },
+  { id: "c04", first_name: "Priya", last_name: "Castellano", phone: "705-555-0163", alt_contact: null, email: "priya.c@example.com", address: null, notes: null, created_at: isoDaysAgo(395) },
+  { id: "c05", first_name: "Marcus", last_name: "Delaney", phone: "705-555-0172", alt_contact: null, email: null, address: null, notes: "Pays by e-transfer.", created_at: isoDaysAgo(480) },
+  { id: "c06", first_name: "Jonah", last_name: "Ellsworth", phone: "705-555-0168", alt_contact: null, email: "jonah.e@example.com", address: null, notes: null, created_at: isoDaysAgo(300) },
+  { id: "c07", first_name: "Wren", last_name: "Halloway", phone: "705-555-0102", alt_contact: null, email: "wren.h@example.com", address: null, notes: "Show dog — frequent visits.", created_at: isoDaysAgo(640) },
+  { id: "c08", first_name: "Garrett", last_name: "Hsu", phone: "705-555-0190", alt_contact: "Work: 705-555-0191", email: null, address: null, notes: null, created_at: isoDaysAgo(560) },
+  { id: "c09", first_name: "Otis", last_name: "Lindqvist", phone: "705-555-0131", alt_contact: null, email: null, address: null, notes: "Big dog — needs the extra time slot.", created_at: isoDaysAgo(420) },
+  { id: "c10", first_name: "Sofia", last_name: "Marchetti", phone: "705-555-0113", alt_contact: null, email: "sofia.m@example.com", address: null, notes: null, created_at: isoDaysAgo(260) },
+  { id: "c11", first_name: "Desmond", last_name: "Ng", phone: "705-555-0109", alt_contact: null, email: "desmond.ng@example.com", address: null, notes: null, created_at: isoDaysAgo(350) },
+  { id: "c12", first_name: "Hannah", last_name: "Ortega", phone: "705-555-0184", alt_contact: null, email: null, address: null, notes: "Reminder texts appreciated.", created_at: isoDaysAgo(510) },
+  { id: "c13", first_name: "Aileen", last_name: "Park", phone: "705-555-0125", alt_contact: null, email: "aileen.park@example.com", address: "57 Cedar Crescent", notes: null, created_at: isoDaysAgo(330) },
+  { id: "c14", first_name: "Dale", last_name: "Pemberton", phone: "705-555-0157", alt_contact: null, email: null, address: null, notes: "Has not booked in a while — follow up.", created_at: isoDaysAgo(600) },
+  { id: "c15", first_name: "Camila", last_name: "Reyes", phone: "705-555-0179", alt_contact: "Partner: 705-555-0180", email: "camila.r@example.com", address: null, notes: "Two huskies, heavy de-shed.", created_at: isoDaysAgo(470) },
+  { id: "c16", first_name: "Greta", last_name: "Sandoval", phone: "705-555-0188", alt_contact: null, email: null, address: null, notes: null, created_at: isoDaysAgo(210) },
+  { id: "c17", first_name: "Bonnie", last_name: "Tran", phone: "705-555-0144", alt_contact: null, email: "bonnie.tran@example.com", address: null, notes: null, created_at: isoDaysAgo(290) },
+  { id: "c18", first_name: "Russ", last_name: "Vandermeer", phone: "705-555-0120", alt_contact: null, email: "russ.v@example.com", address: null, notes: null, created_at: isoDaysAgo(380) },
+  { id: "c19", first_name: "Renata", last_name: "Voss", phone: "705-555-0136", alt_contact: null, email: null, address: null, notes: "Two poodles.", created_at: isoDaysAgo(660) },
+  { id: "c20", first_name: "Caleb", last_name: "Whitmore", phone: "705-555-0151", alt_contact: null, email: "caleb.w@example.com", address: null, notes: null, created_at: isoDaysAgo(580) },
   // Marisol Park shares a surname with Aileen Park (c13) — owner-name
   // disambiguation. Her Bella and Glen Okafor's Bella share a pet name —
   // common-pet-name disambiguation (PRD §1.1).
-  { id: "c21", first_name: "Marisol", last_name: "Park", phone: "705-555-0133", alt_contact: null, email: "marisol.p@example.com", notes: null, created_at: isoDaysAgo(440) },
-  { id: "c22", first_name: "Glen", last_name: "Okafor", phone: "705-555-0155", alt_contact: null, email: null, notes: "Two dogs — Bella usually books with Rufus.", created_at: isoDaysAgo(520) },
+  { id: "c21", first_name: "Marisol", last_name: "Park", phone: "705-555-0133", alt_contact: null, email: "marisol.p@example.com", address: "33 Maplewood Dr", notes: null, created_at: isoDaysAgo(440) },
+  { id: "c22", first_name: "Glen", last_name: "Okafor", phone: "705-555-0155", alt_contact: null, email: null, address: "9 Pinegrove Ave", notes: "Two dogs — Bella usually books with Rufus.", created_at: isoDaysAgo(520) },
 ];
 
 export const FIXTURE_PETS: Pet[] = [

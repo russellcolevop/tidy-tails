@@ -10,6 +10,7 @@ export type Client = {
   phone: string;
   alt_contact: string | null;
   email: string | null; // v2 schema addition — null on live reads
+  address: string | null; // live `clients` column; captured by the intake flow
   notes: string | null;
   created_at: string;
 };
