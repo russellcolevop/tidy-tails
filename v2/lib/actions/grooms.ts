@@ -2,21 +2,27 @@
 
 // Log Groom — the "record a completed groom" write action.
 //
-// IMPORTANT: this action does NOT persist anything in this ship. Like the M2
-// booking action it runs the COMPLETE flow (auth re-check, input validation,
-// pet/client ownership check, insert-payload construction) and then, instead of
-// persisting, returns a result:
-//   - fixture mode  → a "demo" dry-run: nothing is saved (fixtures are immutable
+// Runs the COMPLETE flow (auth re-check, input validation, pet/client ownership
+// check, insert-payload construction), then:
+//   - fixture mode → a "demo" dry-run: nothing is saved (fixtures are immutable
 //     demo data).
-//   - live mode     → the write gate is CLOSED. Live groom writes turn on only
-//     after the Ship 2.2b RLS cutover. Until then this action refuses to write.
+//   - live mode    → the write is governed by the server-side kill-switch
+//     isLogGroomWriteEnabled() (env flag TIDYTAILS_ENABLE_LOG_GROOM_WRITE,
+//     default OFF). Flag OFF → the action returns `gated` and runs NO insert;
+//     the OFF path is byte-identical to the pre-flip behaviour. Flag ON → it
+//     persists one completed `appointments` row. The flag is set only after the
+//     Ship 2.2b RLS cutover and an explicit per-surface flip approval.
 //
-// There is deliberately no `.insert()` here yet. The validated payload is built
-// (buildGroomInsert) so the shape is proven; persistence waits for the gate.
+// A completed groom is an `appointments` row with status='completed'
+// (buildGroomInsert); validateGroomLog already rejects a future date. The
+// persist path is a single-row INSERT — on failure nothing is partially
+// written. `groomer_id` is stamped by the column DEFAULT auth.uid().
 
+import { revalidatePath } from "next/cache";
 import { dataMode, getClientRecord } from "@/lib/data/repo";
 import { serviceLabel } from "@/lib/data/live";
-import { getCurrentUser } from "@/lib/supabase/server";
+import { createServerSupabase, getCurrentUser } from "@/lib/supabase/server";
+import { isLogGroomWriteEnabled } from "@/lib/writeGate";
 import { findOwnedPet } from "@/lib/booking";
 import {
   buildGroomInsert,
@@ -38,7 +44,8 @@ export type GroomState =
   | { status: "idle" }
   | { status: "error"; errors: GroomLogErrors; formError?: string }
   | { status: "demo"; summary: GroomSummary }
-  | { status: "gated"; summary: GroomSummary; message: string };
+  | { status: "gated"; summary: GroomSummary; message: string }
+  | { status: "saved"; summary: GroomSummary };
 
 export async function logGroom(
   _prev: GroomState,
@@ -106,16 +113,29 @@ export async function logGroom(
     return { status: "demo", summary };
   }
 
-  // Live mode: write gate CLOSED. When it lifts (Ship 2.2b cutover), the live
-  // persist is one call:
-  //   const supabase = await createServerSupabase();
-  //   const { error } = await supabase.from("appointments").insert(payload);
-  //   ...then revalidatePath(`/clients/${groom.client_id}`).
-  return {
-    status: "gated",
-    summary,
-    message:
-      "Live groom logging isn't switched on yet — it turns on after the " +
-      "Ship 2.2b security cutover. Nothing was saved.",
-  };
+  // Live mode. The server-side kill-switch decides whether this persists.
+  // OFF (default) → return `gated` and run no insert — identical to pre-flip.
+  if (!isLogGroomWriteEnabled()) {
+    return {
+      status: "gated",
+      summary,
+      message:
+        "Live groom logging isn't switched on yet — it turns on after the " +
+        "Ship 2.2b security cutover. Nothing was saved.",
+    };
+  }
+
+  // Flag ON: persist exactly one completed appointments row. The auth-aware
+  // server client carries Samantha's JWT, so DEFAULT auth.uid() stamps groomer_id.
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.from("appointments").insert(payload);
+  if (error) {
+    return {
+      status: "error",
+      errors: {},
+      formError: "That groom could not be saved. Nothing was written.",
+    };
+  }
+  revalidatePath(`/clients/${groom.client_id}`);
+  return { status: "saved", summary };
 }

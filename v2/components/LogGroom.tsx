@@ -132,8 +132,12 @@ function GroomForm({
     setStep("review");
   }
 
-  // Terminal: the action ran. Nothing is ever saved in this ship.
-  if (state.status === "demo" || state.status === "gated") {
+  // Terminal: the action ran — a demo dry-run, gated (no write), or saved.
+  if (
+    state.status === "demo" ||
+    state.status === "gated" ||
+    state.status === "saved"
+  ) {
     return <ResultScreen state={state} onDone={onDone} />;
   }
 
@@ -308,22 +312,31 @@ function ResultScreen({
   state,
   onDone,
 }: {
-  state: Extract<GroomState, { status: "demo" | "gated" }>;
+  state: Extract<GroomState, { status: "demo" | "gated" | "saved" }>;
   onDone: () => void;
 }) {
   const { summary } = state;
+  const saved = state.status === "saved";
   const headline =
     state.status === "demo"
       ? "Demo only — nothing was saved"
-      : "Not saved — groom logging is switched off";
+      : state.status === "saved"
+        ? "Saved — groom logged"
+        : "Not saved — groom logging is switched off";
   const detail =
     state.status === "demo"
       ? "This is anonymized practice data, so the groom was not logged. The whole flow above is real — it starts saving once live writes are enabled."
-      : state.message;
+      : state.status === "saved"
+        ? `The completed groom is now on ${summary.ownerName}'s file.`
+        : state.message;
 
   return (
     <div className="flex flex-col gap-3.5">
-      <div className="flex gap-2.5 rounded-xl bg-warn-soft p-3.5 text-warn">
+      <div
+        className={`flex gap-2.5 rounded-xl p-3.5 ${
+          saved ? "bg-brand-soft text-brand-ink" : "bg-warn-soft text-warn"
+        }`}
+      >
         <svg
           width="20"
           height="20"
@@ -336,9 +349,18 @@ function ResultScreen({
           className="mt-0.5 shrink-0"
           aria-hidden="true"
         >
-          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-          <line x1="12" y1="9" x2="12" y2="13" />
-          <line x1="12" y1="17" x2="12.01" y2="17" />
+          {saved ? (
+            <>
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </>
+          ) : (
+            <>
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </>
+          )}
         </svg>
         <div>
           <p className="text-sm font-semibold">{headline}</p>
