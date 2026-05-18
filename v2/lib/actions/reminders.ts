@@ -118,7 +118,7 @@ export async function prepareReminder(
     status: "gated",
     summary,
     message:
-      "Live reminder sending isn't switched on yet — it turns on after the " +
-      "Ship 2.2b security cutover. No text was sent.",
+      "Live reminder sending isn't switched on yet — it turns on soon after " +
+      "launch. No text was sent.",
   };
 }

@@ -121,8 +121,8 @@ export async function createBooking(
       status: "gated",
       summary,
       message:
-        "Live booking writes aren't switched on yet — they turn on after the " +
-        "Ship 2.2b security cutover. Nothing was saved.",
+        "Live booking writes aren't switched on yet — they turn on soon " +
+        "after launch. Nothing was saved.",
     };
   }
 

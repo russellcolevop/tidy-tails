@@ -120,8 +120,8 @@ export async function logGroom(
       status: "gated",
       summary,
       message:
-        "Live groom logging isn't switched on yet — it turns on after the " +
-        "Ship 2.2b security cutover. Nothing was saved.",
+        "Live groom logging isn't switched on yet — it turns on soon after " +
+        "launch. Nothing was saved.",
     };
   }
 

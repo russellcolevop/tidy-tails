@@ -116,6 +116,6 @@ export async function saveIntake(
     summary,
     message:
       "Live client and pet creation isn't switched on yet — it turns on " +
-      "after the Ship 2.2b security cutover. Nothing was saved.",
+      "soon after launch. Nothing was saved.",
   };
 }
