@@ -2,20 +2,25 @@
 
 // M2 — the "Add appointment" booking write action.
 //
-// IMPORTANT: this action does NOT persist anything in this ship.
-//   - fixture mode  → a dry-run: the whole flow runs (validation, ownership,
+//   - fixture mode → a dry-run: the whole flow runs (validation, ownership,
 //     payload), nothing is saved — fixtures are immutable demo data.
-//   - live mode     → the write gate is CLOSED. Live appointment writes turn
-//     on only after the Ship 2.2b RLS cutover (HANDOFF item 9) or an explicit
-//     docs/DECISIONS.md gate-lift. Until then this action refuses to write.
+//   - live mode    → the write is governed by the server-side kill-switch
+//     isAddAppointmentWriteEnabled() (env flag
+//     TIDYTAILS_ENABLE_ADD_APPOINTMENT_WRITE, default OFF). Flag OFF → the
+//     action returns `gated` and runs NO insert; the OFF path is byte-identical
+//     to the pre-flip behaviour. Flag ON → it persists one `appointments` row.
+//     The flag is set only after the Ship 2.2b RLS cutover and an explicit
+//     per-surface flip approval — see _reports/2026-05-18-ship-2.2b-write-flip-plan.md.
 //
-// There is deliberately no `.insert()` here yet. The validated payload is
-// built (buildAppointmentInsert) so the shape is proven; persistence is the
-// one step that waits for the gate.
+// The persist path is a single-row INSERT — on failure nothing is partially
+// written. `groomer_id` is stamped by the column DEFAULT auth.uid() on the
+// authenticated insert; it is never set explicitly here.
 
+import { revalidatePath } from "next/cache";
 import { dataMode, getClientRecord } from "@/lib/data/repo";
 import { serviceLabel } from "@/lib/data/live";
-import { getCurrentUser } from "@/lib/supabase/server";
+import { createServerSupabase, getCurrentUser } from "@/lib/supabase/server";
+import { isAddAppointmentWriteEnabled } from "@/lib/writeGate";
 import {
   buildAppointmentInsert,
   findOwnedPet,
@@ -38,7 +43,8 @@ export type BookingState =
   | { status: "idle" }
   | { status: "error"; errors: BookingErrors; formError?: string }
   | { status: "demo"; summary: BookingSummary }
-  | { status: "gated"; summary: BookingSummary; message: string };
+  | { status: "gated"; summary: BookingSummary; message: string }
+  | { status: "saved"; summary: BookingSummary };
 
 export async function createBooking(
   _prev: BookingState,
@@ -108,16 +114,29 @@ export async function createBooking(
     return { status: "demo", summary };
   }
 
-  // Live mode: write gate CLOSED. When it lifts (Ship 2.2b cutover, or an
-  // explicit docs/DECISIONS.md gate-lift), the live persist is one call:
-  //   const supabase = await createServerSupabase();
-  //   const { error } = await supabase.from("appointments").insert(payload);
-  //   ...then revalidatePath(`/clients/${booking.client_id}`).
-  return {
-    status: "gated",
-    summary,
-    message:
-      "Live booking writes aren't switched on yet — they turn on after the " +
-      "Ship 2.2b security cutover. Nothing was saved.",
-  };
+  // Live mode. The server-side kill-switch decides whether this persists.
+  // OFF (default) → return `gated` and run no insert — identical to pre-flip.
+  if (!isAddAppointmentWriteEnabled()) {
+    return {
+      status: "gated",
+      summary,
+      message:
+        "Live booking writes aren't switched on yet — they turn on after the " +
+        "Ship 2.2b security cutover. Nothing was saved.",
+    };
+  }
+
+  // Flag ON: persist exactly one appointments row. The auth-aware server client
+  // carries Samantha's JWT, so the column DEFAULT auth.uid() stamps groomer_id.
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.from("appointments").insert(payload);
+  if (error) {
+    return {
+      status: "error",
+      errors: {},
+      formError: "That appointment could not be saved. Nothing was written.",
+    };
+  }
+  revalidatePath(`/clients/${booking.client_id}`);
+  return { status: "saved", summary };
 }
